@@ -1,21 +1,21 @@
-enum signalStates {
+enum propagationStates {
     INERT,
     SEND,
     RESPOND,
     RESOLVE
 };
-byte signalState = INERT;
+byte propagationState = INERT;
 // order of signal types is important, higher has a higher override
-enum signalTypes {
+enum signalModes {
     SOURCE2SINK,
     PUSH,
     BLOOM
 };
-byte signalType = SOURCE2SINK;
+byte signalMode = SOURCE2SINK;
 
-byte incomingSignalStates[6] = { INERT, INERT, INERT, INERT, INERT, INERT };
-byte incomingSignalTypes[6] = { SOURCE2SINK, SOURCE2SINK, SOURCE2SINK, SOURCE2SINK, SOURCE2SINK, SOURCE2SINK };
-byte incomingNeighborData[6] = {};
+byte incomingPropagationStates[6] = { INERT, INERT, INERT, INERT, INERT, INERT };
+byte incomingSignalModes[6] = { SOURCE2SINK, SOURCE2SINK, SOURCE2SINK, SOURCE2SINK, SOURCE2SINK, SOURCE2SINK };
+byte incomingNeighborData[6] = { 0, 0, 0, 0, 0, 0};
 
 enum bloomActions {
     UNDO,
@@ -31,30 +31,30 @@ const float sinkBroadcastSendTimeout = 0.5;
 const int moveCancelTimeout = 10;
 
 byte pips[] = { 0, 1, 0, 0, 0, 0 };
-bool currentTurnColor = false; // turn color true -> p
+bool currentTurnColor = false; // turn color true -> pip[f] = 2
 
 void setup() {
 randomize();
 }
 
 void resetToIdle() {
-    signalState = INERT;
-    signalType = SOURCE2SINK;
+    propagationState = INERT;
+    signalMode = SOURCE2SINK;
 }
 
 void loop() {
 
     FOREACH_FACE(f) {
         if (!isValueReceivedOnFaceExpired(f) && getLastValueReceivedOnFace(f) >= 0 ) {
-            incomingSignalStates[f] = getLastValueReceivedOnFace(f) & 3;
-            incomingSignalTypes[f] = (getLastValueReceivedOnFace(f) >> 2) & 3;
+            incomingPropagationStates[f] = getLastValueReceivedOnFace(f) & 3;
+            incomingSignalModes[f] = (getLastValueReceivedOnFace(f) >> 2) & 3;
             incomingNeighborData[f] = (getLastValueReceivedOnFace(f) >> 4) & 3;
 
             // check if neighbor has a signal type that should override ours
-            if (incomingSignalTypes[f] > signalType && incomingSignalStates[f] == SEND) {
-                signalState = incomingSignalStates[f];
-                signalType = incomingSignalTypes[f];
-                if (signalType == PUSH) {
+            if (incomingSignalModes[f] > signalMode && incomingPropagationStates[f] == SEND) {
+                propagationState = incomingPropagationStates[f];
+                signalMode = incomingSignalModes[f];
+                if (signalMode == PUSH) {
                     // TODO: read the push color bit and save it in lastPushColorBitReceived
                     // TODO: check if we should be in SEND or RESPOND
                     // TODO: if we are in RESPOND, check if push was valid
@@ -70,20 +70,20 @@ void loop() {
     bool buttonWasPressed = buttonSingleClicked();
     if (buttonWasDoubleClicked) {
     // TODO: respond to double click for turn change
-        signalType = BLOOM;
-        signalState = SEND;
+        signalMode = BLOOM;
+        propagationState = SEND;
         myData = TURN_CHANGE;
     }
     if (buttonWasLongPressed) {
         // reset
-        signalType = BLOOM;
-        signalState = SEND;
+        signalMode = BLOOM;
+        propagationState = SEND;
         myData = RESET;
     }
     // TODO: respond to triple click for undo
-    switch (signalType) {
+    switch (signalMode) {
     case SOURCE2SINK:
-        switch (signalState) {
+        switch (propagationState) {
         case INERT:
             if (!buttonWasPressed) {
              
@@ -92,20 +92,21 @@ void loop() {
               }
             }
             else {
-            
-            console.log("button pressed");
-                // TODO: check if we are source or sink
                 // We're source if none of our neighbors are broadcasting SEND
                 bool isSource = false;
                 byte faceGettingSend = 0;
                 FOREACH_FACE(f) {
-                    if (incomingSignalStates[f] == SEND) {
+                    if (incomingPropagationStates[f] == SEND) {
                         isSource = true;
                         break;
                     }
                 }
-                console.log("isSource: " + isSource);
-                signalState = SEND;
+                if (isSource) {
+                  propagationState = SEND;
+                }
+                else {
+                  propagationState = RESPOND;
+                }
                 
                 // // As source, we need to check for which neighbor is broadcasting SEND and
                 // // try to input a move on that side. If a pip is already present on that
@@ -113,10 +114,8 @@ void loop() {
                 // if (isSource) {
                 //     // Is the attempted action a push because that face has a pip already there?
                 //     if (pips[faceGettingSend] != 0) {
-                //         signalType = PUSH;
-                //         console.log("pushTime");
+                //         signalMode = PUSH;
                 //     } else {
-                //         console.log("settingPips");
                 //         // TODO Add making the move
                 //         if (currentTurnColor) {
                 //             pips[faceGettingSend] = 1;
@@ -133,12 +132,9 @@ void loop() {
                 //     // sharedTimer.set(moveCancelTimeout);
                 // // As sink, we need to keep broadcasting SEND for 0.5 seconds and then change to INERT
                 // } else {
-                //         console.log("sinkMode");
                 //     sharedTimer.set(sinkBroadcastSendTimeout);
                 //     while (true) {
-                //         console.log("looping");
                 //         if (sharedTimer.isExpired()) {
-                //         console.log("break");
                 //             resetToIdle();
                 //           break;
                 //             // TODO broadcast state? Maybe handle at top of switch.
@@ -148,12 +144,15 @@ void loop() {
             }
             break;
         case SEND:
-            // TODO: check if neighbors are send. if they are, write pip and go to resolve or PUSH SEND
+            // TODO: check if any neighbors are RESPOND. if they are, then trigger a move.
+                       // (write pip and go to INERT or, save push direction and go to PUSH SEND)
             //       if we are going to PUSH SEND make sure to write to myPushColorBit
-            // TODO: broadcast send
+            // TODO: check if timeout is finished, if so go to INERT
+            // TODO: broadcast send to all neighbors
             break;
-        case RESOLVE:
-            // TODO: broadcast resolve
+        case RESPOND:
+            // TODO: check if timeout is finished, if so go to INERT
+            // TODO: broadcast send only to source
             break;
         default:
             // there must have been something wrong
@@ -162,7 +161,7 @@ void loop() {
         }
         break;
     case PUSH:
-        switch (signalState) {
+        switch (propagationState) {
         case SEND:
             // TODO: check if neighbor is respond. if they are and push success is true, write change to pips (using lastPushColorBitReceived to get the push color)
             // TODO: broadcast send to correct neighbor with myPushColorBit
@@ -184,25 +183,25 @@ void loop() {
     case BLOOM:
         // TODO: broadcast SEND to all neighbors with myData
         byte toBroadcast = 0;
-        toBroadcast += signalState;
+        toBroadcast += propagationState;
         toBroadcast += BLOOM << 2;
         toBroadcast += myData << 4;
         FOREACH_FACE(f) {
           setValueSentOnFace(toBroadcast, f);
         }
-        switch (signalState) {
+        switch (propagationState) {
         case SEND:
             bool isAnyNeighborNotSendOrResolve = false;
             FOREACH_FACE(f) {
                 if (!isValueReceivedOnFaceExpired(f)
-                    && (incomingSignalStates[f] < SEND // if it's SEND or RESOLVE we're OK
-                        || incomingSignalTypes[f] != BLOOM)) {
+                    && (incomingPropagationStates[f] < SEND // if it's SEND or RESOLVE we're OK
+                        || incomingSignalModes[f] != BLOOM)) {
                     isAnyNeighborNotSendOrResolve = true;
                     break;
                 }
             }
             if (!isAnyNeighborNotSendOrResolve) {
-                signalState = RESOLVE;
+                propagationState = RESOLVE;
                 switch (myData) {
                 case UNDO:
                     break;
@@ -222,7 +221,7 @@ void loop() {
             FOREACH_FACE(f) {
                 if (!isValueReceivedOnFaceExpired(f)
                     // if neighbors are inert or resolve we are OK
-                    && (!(incomingSignalStates[f] == INERT || incomingSignalStates[f] == RESOLVE))) {
+                    && (!(incomingPropagationStates[f] == INERT || incomingPropagationStates[f] == RESOLVE))) {
                     isAnyNeighborNotResolveOrInert = true;
                     break;
                 }

@@ -1,18 +1,3 @@
-// TODO Can only push things of your own color. Do this by in push
-
-// ************************************************************************************
-// ************************************************************************************
-//
-// NOTES FOR SPENCER
-// if you are the sink, we should go into RESPOND. this should allow us to not
-// have more global state
-// check the updated TODOs in the SOURCE2SINK SEND and SOURCE2SINK RESPOND states
-// the state machine doc has also been updated
-//
-// ************************************************************************************
-// ************************************************************************************
-
-
 #define PENDING_CHANGE_PULSE_WIDTH 800
 #define CHAIN_PW 200
 #define SPINNER_PW 700
@@ -171,6 +156,14 @@ void loop() {
             // try to input a move on that side. If a pip is already present on that
             // face then attempt a push.
             if (isSource) {
+                // If the source is clicked again before we get a response from our neighbors
+                // then cancel the move. Note that we don't call buttonSingleClicked() again here
+                // because the call above has already consumed the click.
+                if (buttonWasPressed) {
+                    resetToIdle();
+                    broadcastOnAllFaces();
+                }
+
                 // Check which neighbor is broadcasting RESPOND
                 byte neighborBroadcastingRespond = -1;
                 FOREACH_FACE(f) {
@@ -384,7 +377,7 @@ void loop() {
         
     }
     FOREACH_FACE(f) {
-        byte brightness = 60;
+        byte brightness = 100;
         if (pips[f] == 0) {
             if (arePipsChanged) {
                 brightness = map(sin8_C(
@@ -420,4 +413,3 @@ void loop() {
         setColorOnFace(WHITE, map(millis() % SPINNER_PW, 0, SPINNER_PW, 0, 6));
     }
 }
-

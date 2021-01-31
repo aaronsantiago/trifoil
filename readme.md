@@ -1,23 +1,23 @@
 
-####Trifoil
+#### Trifoil
 
 Trifoil is a long-form, head to head strategy game that can be played with 6 or more blinks.
 Players take turns placing pieces, pushing them, and sections of the board itself to try to build a long chain before their opponent can.
 
 The rules are flexible along with the initial board state, so the game can evolve to be simple, complex, or even just different depending on what you want to play!
 
-###Setup
+### Setup
 
 You can play the game in the [Blinks simulator](https://move38.github.io/Blinks-Simulator/).
 Copy the code from `trifoil.ino` into the simulator!
 
 You can also play "online multiplayer" using Google Slides, simply [duplicate this presentation](https://docs.google.com/presentation/d/1zNeIM4jhh3tsyYy73fLiq9a-cftgsKfThUjC3I1FVD8/edit?usp=sharing).
 
-###How to play
+### How to play
 
 The base board setup with 6 blinks is as follows:
 
-![board_6](https://github.com/aaronsantiago/trifoil/blob/master/images/board_6.gif?raw=true)
+![board_6](https://github.com/aaronsantiago/trifoil/blob/master/images/board_6.png?raw=true)
 
 There are 2 players, red and blue. The board is lit up with which player currently is making their move.
 Each turn, players can use up to 2 actions (see available actions), except for the first turn of the game where a player can only use one action.
@@ -25,77 +25,75 @@ Each turn, players can use up to 2 actions (see available actions), except for t
 A player wins when they have a chain of 5 pieces of their own color!
 The game also ends when either player has placed 9 pieces, in which case the player with the longest chain wins (see end game rules).
 
-##Available actions
+## Available actions
 
 On the first turn of the game, the player going first only gets 1 action.
 Every turn afterwards each playe gets 2 actions.
 
-#Place a piece
+# Place a piece
 
-You can place a piece by first clicking the blink you wish to place on, then clicking the blink touching the face that you want to place!
+You can place a piece by first clicking the blink you wish to place on, then clicking the blink touching the face that you want to place!  
 ![input_move](https://github.com/aaronsantiago/trifoil/blob/master/images/input_move.gif?raw=true)
 
 This means that you can't place any pieces facing outwards from the formation.
 
-#Spin 
+# Spin 
 
 The board has 3 triangles that you can disconnect from the board and spin as one of your actions.
 Players are allowed to do this ONLY if they have less pieces on that triangle than their opponents.
 This is referred to as the "minority rule."
-If they have the same amount of pieces as the opponent, they cannot spin it.
+If they have the same amount of pieces as the opponent, they cannot spin it.  
 ![spin](https://github.com/aaronsantiago/trifoil/blob/master/images/spin.gif?raw=true)
 
-#Push
+# Push
 
 You can push a piece outwards from a Blink the same way that you place a piece.
 If you attempt to place a piece where a piece already exists, you will instead push it--pushing any other pieces in the way as well!
-You can only push pieces of your own color.
-![push](https://github.com/aaronsantiago/trifoil/blob/master/images/push.gif?raw=true)
+You can only push pieces of your own color.  
+![push](https://github.com/aaronsantiago/trifoil/blob/master/images/push.gif?raw=true)  
 ![push_multiple](https://github.com/aaronsantiago/trifoil/blob/master/images/push_multiple.gif?raw=true)
 
-If your push would result in a piece being deleted off of the edge of the board, it is considered invalid and will do nothing.
+If your push would result in a piece being deleted off of the edge of the board, it is considered invalid and will do nothing.  
 ![push_wall](https://github.com/aaronsantiago/trifoil/blob/master/images/push_wall.gif?raw=true)
 
 
-##After your move
+## After your move
 
-#Switching turns
+# Switching turns
 
-Once you have made your moves, double click any Blink to commit a move and switch turns.
+Once you have made your moves, double click any Blink to commit a move and switch turns.  
 ![switch_turn](https://github.com/aaronsantiago/trifoil/blob/master/images/switch_turn.gif?raw=true)
 
-#Undoing moves
+# Undoing moves
 
-If you made a mistake, triple click any Blink before you commit your move to undo the board to the beginning of your turn!
+If you made a mistake, triple click any Blink before you commit your move to undo the board to the beginning of your turn!  
 ![undo](https://github.com/aaronsantiago/trifoil/blob/master/images/undo.gif?raw=true)
 
-#Resetting the game
+# Resetting the game
 
-Once the game ends, you can long press any Blink to reset the game.
+Once the game ends, you can long press any Blink to reset the game.  
 ![reset](https://github.com/aaronsantiago/trifoil/blob/master/images/reset.gif?raw=true)
 
-![input_move](https://github.com/aaronsantiago/trifoil/blob/master/images/input_move.gif?raw=true)
 
-
-##End Game Rules
-#Win condition
+## End Game Rules
+# Win condition
 A player instantly wins if they have a chain of at least 5 pieces.
 Each Blink can contribute at most 2 pips to a chain.
 
-#End conditions
+# End conditions
 Players only have 9 pieces each. If they run out, the game ends and whoever has the longest chain wins.
 
-###Variations
+### Variations
 
 The rulebook and the board are flexible, so use your imagination--the possibilities are endless!
 
-##Rule Variations
+## Rule Variations
 
  - Instead of a limited number of pieces, try playing until any one Blink has 5 pieces on it. When that happens, the longest chain wins.
  - Try playing with 3 moves instead of 2! You might need to increase the winning chain length.
  - Removing the limit of pieces that a Blink can contribute to a chain creates a much more defensive game!
 
-##Map Variations
+## Map Variations
 
 Here are a few variations that we have come up with!
 You can experiment with different rotatable shapes, different numbers of blinks, different arrangements, and different win lengths!
@@ -103,23 +101,23 @@ You can experiment with different rotatable shapes, different numbers of blinks,
 # 8 Blinks
 
 Winning Chain Length: 5  
-Available pieces per player: 11 
-![board_8](https://github.com/aaronsantiago/trifoil/blob/master/images/board_6.gif?raw=true)
+Available pieces per player: 11   
+![board_8](https://github.com/aaronsantiago/trifoil/blob/master/images/board_6.png?raw=true)
 
 # 9 Blinks
 
 Winning Chain Length: 6  
-Available pieces per player: 12
-![board_9](https://github.com/aaronsantiago/trifoil/blob/master/images/board_6.gif?raw=true)
+Available pieces per player: 12  
+![board_9](https://github.com/aaronsantiago/trifoil/blob/master/images/board_6.png?raw=true)
 
 # 10 Blinks
 
 Winning Chain Length: 6   
-Available pieces per player: 13
-![board_10](https://github.com/aaronsantiago/trifoil/blob/master/images/board_6.gif?raw=true)
+Available pieces per player: 13  
+![board_10](https://github.com/aaronsantiago/trifoil/blob/master/images/board_6.png?raw=true)
 
 # 12 Blinks
 
 Winning Chain Length: 7  
-Available pieces per player: 15
-![board_12](https://github.com/aaronsantiago/trifoil/blob/master/images/board_6.gif?raw=true)
+Available pieces per player: 15  
+![board_12](https://github.com/aaronsantiago/trifoil/blob/master/images/board_6.png?raw=true)

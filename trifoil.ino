@@ -1,4 +1,4 @@
-
+// TODO Can only push things of your own color. Do this by in push
 
 // ************************************************************************************
 // ************************************************************************************
@@ -15,6 +15,7 @@
 
 #define PENDING_CHANGE_PULSE_WIDTH 800
 #define CHAIN_PW 200
+#define SPINNER_PW 700
 
 enum propagationStates {
     INERT,
@@ -37,9 +38,8 @@ byte incomingNeighborData[6] = { 0, 0, 0, 0, 0, 0};
 
 enum bloomActions {
     UNDO,
-    RESET,
-    TURN_CHANGE_RED,
-    TURN_CHANGE_BLUE
+    TURN_CHANGE,
+    RESET
 };
 byte myData = 0;
 
@@ -48,12 +48,13 @@ bool wasPushSource = false;
 bool isSource = true; 
 
 Timer sharedTimer;
-const float sinkBroadcastSendTimeout = 0.5;
+const int sinkBroadcastSendTimeout = 500;
 const int moveCancelTimeout = 10;
+bool haveSetTimer = false;
 
 byte pushDirection = 0;
 
-byte pips[] = { 2, 1, 0, 0, 0, 0 };
+byte pips[] = { 0, 0, 0, 0, 0, 0 };
 byte lastPips[] = {0, 0, 0, 0, 0, 0}; // for undo
 bool currentTurnColor = false; // turn color true -> pip[f] = 2
 
@@ -122,27 +123,19 @@ void loop() {
     // TODO: respond to double click for turn change
         signalMode = BLOOM;
         propagationState = SEND;
-        myData = TURN_CHANGE_RED;
-        if (!currentTurnColor) {
-            myData = TURN_CHANGE_BLUE;
-        }
+        myData = TURN_CHANGE;
     }
     if (buttonWasLongPressed) {
         // reset
         signalMode = BLOOM;
         propagationState = SEND;
-        //myData = RESET;
-        myData = UNDO;
+        myData = RESET;
     }
     if (buttonWasTriplePressed) {
-      if (pips[pushDirection] > 0 && !isValueReceivedOnFaceExpired(pushDirection)) {
-        wasPushSource = true;
-        signalMode = PUSH;
+        signalMode = BLOOM;
         propagationState = SEND;
-        myData = (pips[pushDirection] - 1); // set the color bit
-      }
+        myData = UNDO;
     }
-    // TODO: respond to triple click for undo
     byte toBroadcast = 0;
     switch (signalMode) {
     case SOURCE2SINK:
@@ -168,34 +161,48 @@ void loop() {
                   propagationState = SEND;
                 }
                 else {
-                  propagationState = RESPOND;
+                  propagationState = SEND;
                 } //probably don't add more code below this
+                broadcastOnAllFaces();
             }
             break;
         case SEND:
-            // We're source if none of our neighbors are broadcasting SEND
-            // TODO This code is repeated.
-            isSource = true;
-            byte faceGettingSend = 0;
-            FOREACH_FACE(f) {
-                if (incomingPropagationStates[f] == SEND) {
-                    isSource = false;
-                    faceGettingSend = f;
-                    break;
-                }
-            }
-            // As source, we need to check for which neighbor is broadcasting RESPOND and
+            // As source, we need to check for which neighbor is broadcasting SEND (previously RESPOND) and
             // try to input a move on that side. If a pip is already present on that
             // face then attempt a push.
             if (isSource) {
+                // Check which neighbor is broadcasting RESPOND
+                byte neighborBroadcastingRespond = -1;
+                FOREACH_FACE(f) {
+                    if (!isValueReceivedOnFaceExpired(f) && incomingPropagationStates[f] == SEND) {
+                        neighborBroadcastingRespond = f;
+                        break;
+                    }
+                }
+                if (neighborBroadcastingRespond == -1) {
+                    break;
+                }
                 // Is the attempted action a push because that face has a pip already there?
-                if (pips[faceGettingSend] != 0) {
-                    signalMode = PUSH;
+                if (pips[neighborBroadcastingRespond] != 0) {
+                    // Are we trying to push a color that doesn't belong to us? If so go back to idle
+                    if ((currentTurnColor && pips[neighborBroadcastingRespond] == 1) ||
+                       (!currentTurnColor && pips[neighborBroadcastingRespond] == 2)) {
+                        resetToIdle();
+                        broadcastOnAllFaces();
+                    }
+                    else {
+                        pushDirection = neighborBroadcastingRespond;
+                        wasPushSource = true;
+                        signalMode = PUSH;
+                        propagationState = SEND;
+                        myData = (pips[pushDirection] - 1); // set the color bit
+                    }
+                  
                 } else {
                     if (currentTurnColor) {
-                        pips[faceGettingSend] = 1;
+                        pips[neighborBroadcastingRespond] = 2;
                     } else {
-                        pips[faceGettingSend] = 2;
+                        pips[neighborBroadcastingRespond] = 1;
                     }
                     resetToIdle();
                     broadcastOnAllFaces();
@@ -206,10 +213,16 @@ void loop() {
                 // sharedTimer.set(moveCancelTimeout);
             // As sink, we need to keep broadcasting SEND for 0.5 seconds and then change to INERT
             } else {
-                sharedTimer.set(sinkBroadcastSendTimeout);
+                if (!haveSetTimer) {
+                    sharedTimer.set(sinkBroadcastSendTimeout);
+                    haveSetTimer = true;
+                }
+                // This should be broadcasting RESPOND
+                broadcastOnAllFaces();
                 if (sharedTimer.isExpired()) {
                     resetToIdle();
-                    // TODO broadcast state? Maybe handle at top of switch.
+                    haveSetTimer = false;
+                    broadcastOnAllFaces();
                 }
             }
         
@@ -323,17 +336,11 @@ void loop() {
                         pips[f] = lastPips[f];
                     }
                     break;
-                case TURN_CHANGE_RED:
+                case TURN_CHANGE:
                     FOREACH_FACE(f) {
                         lastPips[f] = pips[f];
                     }
-                    currentTurnColor = false;
-                    break;
-                case TURN_CHANGE_BLUE:
-                    FOREACH_FACE(f) {
-                        lastPips[f] = pips[f];
-                    }
-                    currentTurnColor = true;
+                    currentTurnColor = !currentTurnColor;
                     break;
                 case RESET:
                     FOREACH_FACE(f) { pips[f] = 0; };
@@ -384,7 +391,7 @@ void loop() {
                         map(millis() % PENDING_CHANGE_PULSE_WIDTH, 0, PENDING_CHANGE_PULSE_WIDTH, 0, 255)
                     ), 0, 255, 0, 100);
             }
-            if (currentTurnColor) {
+            if (!currentTurnColor) {
                 setColorOnFace(dim(RED, brightness), f);
             }
             else {
@@ -394,7 +401,7 @@ void loop() {
         else {
         
             brightness = 255;
-            if ((pips[f] == incomingNeighborData[f] && !isValueReceivedOnFaceExpired(f))
+            if (pips[f] == incomingNeighborData[f]
                   || (pips[f] == 1 && redCount >= 2)
                   || (pips[f] == 2 && blueCount >= 2) ) {
                 brightness = map(sin8_C(
@@ -409,4 +416,8 @@ void loop() {
             }
         }
     }
+    if (propagationState == SEND && signalMode == SOURCE2SINK && isSource) {
+        setColorOnFace(WHITE, map(millis() % SPINNER_PW, 0, SPINNER_PW, 0, 6));
+    }
 }
+

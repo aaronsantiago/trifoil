@@ -50,9 +50,8 @@ If they have the same amount of pieces as the opponent, they cannot spin it.
 #### Push
 
 You can push a piece outwards from a Blink the same way that you place a piece.
-If you attempt to place a piece where a piece already exists, you will instead push it.
-You can only start pushes from pieces of your own color.  
-If there are any pieces behind the piece you are pushing, it is pushed as well, regardless of its color!  
+If you attempt to place a piece where a piece already exists, you will instead push it--pushing any other pieces in the way as well!
+You can only push pieces of your own color.  
 ![push](https://github.com/aaronsantiago/trifoil/blob/master/images/push.gif?raw=true)  
 ![push_multiple](https://github.com/aaronsantiago/trifoil/blob/master/images/push_multiple.gif?raw=true)
 
@@ -69,7 +68,7 @@ Once you have made your moves, double click any Blink to commit a move and switc
 
 #### Undoing moves
 
-If you made a mistake, triple click any Blink before you commit your move to undo the board to the beginning of your turn!  
+If you made a mistake, triple click any Blink <ins>before</ins> you commit your move to undo the board to the beginning of your turn!  
 ![undo](https://github.com/aaronsantiago/trifoil/blob/master/images/undo.gif?raw=true)
 
 #### Resetting the game

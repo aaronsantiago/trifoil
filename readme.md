@@ -8,10 +8,10 @@ The rules are flexible along with the initial board state, so the game can evolv
 
 ## Setup
 
-You can play the game in the [Blinks simulator](https://move38.github.io/Blinks-Simulator/).
-Copy the code from `trifoil.ino` into the simulator and press "Run Code" on the top right! (We suggest one player share their screen and the other dictate their moves).
+You can play the game the [Blinks simulator](https://move38.github.io/Blinks-Simulator/) (though one person will have to screen share and the other will need to dictate their moves) or with "online multiplayer" by duplicating [this presentation](https://docs.google.com/presentation/d/1zNeIM4jhh3tsyYy73fLiq9a-cftgsKfThUjC3I1FVD8/edit?usp=sharing).
+All features work in the simulator but because of its instability, tendency to eat blinks, and lack of networking we recommend playing in Google Slides.
 
-You can also play "online multiplayer" using Google Slides, simply [duplicate this presentation](https://docs.google.com/presentation/d/1zNeIM4jhh3tsyYy73fLiq9a-cftgsKfThUjC3I1FVD8/edit?usp=sharing).
+To use the simulator copy the code from `trifoil.ino` into the simulator and press "Run Code" on the top right.
 
 ## How to play
 

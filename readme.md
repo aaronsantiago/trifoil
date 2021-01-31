@@ -40,6 +40,8 @@ This means that you can't place any pieces facing outwards from the formation.
 # Spin 
 
 The board has 3 triangles that you can disconnect from the board and spin as one of your actions.
+They are labelled "Δ", "Ω", and "θ" in the board above!
+
 Players are allowed to do this ONLY if they have less pieces on that triangle than their opponents.
 This is referred to as the "minority rule."
 If they have the same amount of pieces as the opponent, they cannot spin it.  

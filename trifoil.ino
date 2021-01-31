@@ -13,6 +13,8 @@
 // ************************************************************************************
 
 
+#define PENDING_CHANGE_PULSE_WIDTH 3000
+
 enum propagationStates {
     INERT,
     SEND,
@@ -49,6 +51,7 @@ const int moveCancelTimeout = 10;
 byte pushDirection = 0;
 
 byte pips[] = { 2, 1, 0, 0, 0, 0 };
+byte lastPips[] = {0, 0, 0, 0, 0, 0}; // for undo
 bool currentTurnColor = false; // turn color true -> pip[f] = 2
 
 void setup() {
@@ -115,7 +118,8 @@ void loop() {
         // reset
         signalMode = BLOOM;
         propagationState = SEND;
-        myData = RESET;
+        //myData = RESET;
+        myData = UNDO;
     }
     if (buttonWasTriplePressed) {
       if (pips[pushDirection] > 0 && !isValueReceivedOnFaceExpired(pushDirection)) {
@@ -311,8 +315,14 @@ void loop() {
                 propagationState = RESOLVE;
                 switch (myData) {
                 case UNDO:
+                    FOREACH_FACE(f) {
+                        pips[f] = lastPips[f];
+                    }
                     break;
                 case TURN_CHANGE:
+                    FOREACH_FACE(f) {
+                        lastPips[f] = pips[f];
+                    }
                     currentTurnColor = !currentTurnColor;
                     break;
                 case RESET:
@@ -345,13 +355,24 @@ void loop() {
         break;
     }
 
+    bool arePipsChanged = false;
+    FOREACH_FACE(f) {
+        if (pips[f] != lastPips[f]) {
+            arePipsChanged = true;
+            break;
+        }
+    }
     FOREACH_FACE(f) {
         if (pips[f] == 0) {
+            byte brightness = 60;
+            if (arePipsChanged) {
+                brightness = sin8_C(map(millis() % PENDING_CHANGE_PULSE_WIDTH, 0, PENDING_CHANGE_PULSE_WIDTH, 0, 255));
+            }
             if (currentTurnColor) {
-                setColorOnFace(dim(RED, 60), f);
+                setColorOnFace(dim(RED, brightness), f);
             }
             else {
-                setColorOnFace(dim(CYAN, 60), f);
+                setColorOnFace(dim(CYAN, brightness), f);
             }
         }
         if (pips[f] == 1) {

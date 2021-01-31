@@ -1,3 +1,18 @@
+
+
+// ************************************************************************************
+// ************************************************************************************
+//
+// NOTES FOR SPENCER
+// if you are the sink, we should go into RESPOND. this should allow us to not
+// have more global state
+// check the updated TODOs in the SOURCE2SINK SEND and SOURCE2SINK RESPOND states
+// the state machine doc has also been updated
+//
+// ************************************************************************************
+// ************************************************************************************
+
+
 enum propagationStates {
     INERT,
     SEND,
@@ -25,12 +40,15 @@ enum bloomActions {
 byte myData = 0;
 
 byte lastPushColorBitReceived = 0;
+bool wasPushSource = false;
 
 Timer sharedTimer;
 const float sinkBroadcastSendTimeout = 0.5;
 const int moveCancelTimeout = 10;
 
-byte pips[] = { 0, 1, 0, 0, 0, 0 };
+byte pushDirection = 0;
+
+byte pips[] = { 2, 1, 0, 0, 0, 0 };
 bool currentTurnColor = false; // turn color true -> pip[f] = 2
 
 void setup() {
@@ -50,16 +68,35 @@ void loop() {
             incomingSignalModes[f] = (getLastValueReceivedOnFace(f) >> 2) & 3;
             incomingNeighborData[f] = (getLastValueReceivedOnFace(f) >> 4) & 3;
 
-            // check if neighbor has a signal type that should override ours
+            // check if neighbor has a signal type that should override ours, and is trying to SEND to us
             if (incomingSignalModes[f] > signalMode && incomingPropagationStates[f] == SEND) {
                 propagationState = incomingPropagationStates[f];
                 signalMode = incomingSignalModes[f];
-                if (signalMode == PUSH) {
-                    // TODO: read the push color bit and save it in lastPushColorBitReceived
-                    // TODO: check if we should be in SEND or RESPOND
-                    // TODO: if we are in RESPOND, check if push was valid
-                }
                 myData = incomingNeighborData[f];
+                if (signalMode == PUSH) {
+                    lastPushColorBitReceived = incomingNeighborData[f] & 1;
+                    pushDirection = (f + 3) % 6;
+
+                    if (pips[f] == 0) { // regular push
+                      pips[f] = lastPushColorBitReceived + 1;
+                      myData = 2 + (myData & 1); // set the success bit
+                      propagationState = RESPOND;
+                    }
+                    else if (pips[pushDirection] == 0) { // 1 pip displaced
+                      pips[pushDirection] = pips[f];
+                      pips[f] = lastPushColorBitReceived + 1;
+                      myData = 2 + (myData & 1); // set the success bit to 1
+                      propagationState = RESPOND;
+                    }
+                    else if (!isValueReceivedOnFaceExpired(pushDirection)) { // both pips and neighbor exists
+                      myData = (pips[pushDirection] - 1); // set the color bit
+                      propagationState = SEND;
+                    }
+                    else { // both pips and neighbor does not exist
+                      myData = 0 + (myData & 1); // set the success bit to 0
+                      propagationState = RESPOND;
+                    }
+                }
             }
         }
     }
@@ -80,7 +117,16 @@ void loop() {
         propagationState = SEND;
         myData = RESET;
     }
+    if (buttonWasTriplePressed) {
+      if (pips[pushDirection] > 0 && !isValueReceivedOnFaceExpired(pushDirection)) {
+        wasPushSource = true;
+        signalMode = PUSH;
+        propagationState = SEND;
+        myData = (pips[pushDirection] - 1); // set the color bit
+      }
+    }
     // TODO: respond to triple click for undo
+    byte toBroadcast = 0;
     switch (signalMode) {
     case SOURCE2SINK:
         switch (propagationState) {
@@ -106,7 +152,8 @@ void loop() {
                 }
                 else {
                   propagationState = RESPOND;
-                }
+                } //probably don't add more code below this
+                
                 
                 // // As source, we need to check for which neighbor is broadcasting SEND and
                 // // try to input a move on that side. If a pip is already present on that
@@ -163,16 +210,76 @@ void loop() {
     case PUSH:
         switch (propagationState) {
         case SEND:
-            // TODO: check if neighbor is respond. if they are and push success is true, write change to pips (using lastPushColorBitReceived to get the push color)
-            // TODO: broadcast send to correct neighbor with myPushColorBit
+            toBroadcast = 0;
+            toBroadcast += SEND;
+            toBroadcast += PUSH << 2;
+            toBroadcast += myData << 4;
+            setValueSentOnAllFaces(0);
+            setValueSentOnFace(toBroadcast, pushDirection);
+            
+            bool isPushNeighborRespond = false;
+            if (!isValueReceivedOnFaceExpired(pushDirection)
+                && incomingPropagationStates[pushDirection] == RESPOND
+                && incomingSignalModes[pushDirection] == PUSH) {
+              isPushNeighborRespond = true;
+            }
+            if (isPushNeighborRespond) {
+              // set our success bit to match the incoming one
+              myData = (incomingNeighborData[pushDirection] & 2) + (myData & 1);
+              if (myData >> 1 > 0) {
+                if (wasPushSource) {
+                  pips[pushDirection] = 0;
+                }
+                else { // we're only in PUSH SEND and not source if both push pips are filled
+                  pips[pushDirection] = pips[(pushDirection + 3) % 6];
+                  pips[(pushDirection + 3) % 6] = lastPushColorBitReceived + 1;
+                }
+              }
+              propagationState = RESPOND;
+            }
             break;
         case RESPOND:
-            // TODO: check if any neighbor is resolve
-            // TODO: broadcast respond to both neighbors with push success bit
+            toBroadcast = 0;
+            toBroadcast += RESPOND;
+            toBroadcast += PUSH << 2;
+            toBroadcast += myData << 4;
+            setValueSentOnAllFaces(toBroadcast);
+              // we're not SEND ing so it won't matter if we send to all
+              // this lets us skip keeping track of which neighbors to RESPOND to
+            
+            bool areAllPUSHNeighborsRespondOrResolve = true;
+            FOREACH_FACE(f) {
+              if (!isValueReceivedOnFaceExpired(f)
+                  && (!(incomingPropagationStates[f] == RESPOND || incomingPropagationStates[f] == RESOLVE)
+                  && incomingSignalModes[f] == PUSH)) {
+                areAllPUSHNeighborsRespondOrResolve = false;
+                break;
+              }
+            }
+            if (areAllPUSHNeighborsRespondOrResolve) {
+              propagationState = RESOLVE;
+            }
             break;
         case RESOLVE:
-            // TODO: check if neighbors are all resolve
-            // TODO: broadcast resolve
+            toBroadcast = 0;
+            toBroadcast += RESOLVE;
+            toBroadcast += PUSH << 2;
+            toBroadcast += myData << 4;
+            setValueSentOnAllFaces(toBroadcast);
+              // we're not SEND ing so it won't matter if we send to all
+              // this lets us skip keeping track of which neighbors to send RESOLVE to
+            
+            bool areAllNeighborsResolveOrInert = true;
+            FOREACH_FACE(f) {
+              if (!isValueReceivedOnFaceExpired(f)
+                  && !(incomingPropagationStates[f] == INERT || incomingPropagationStates[f] == RESOLVE)) {
+                areAllNeighborsResolveOrInert = false;
+                break;
+              }
+            }
+            if (areAllNeighborsResolveOrInert) {
+              resetToIdle();
+            }
             break;
         default:
             // there must have been something wrong
@@ -182,7 +289,7 @@ void loop() {
         break;
     case BLOOM:
         // TODO: broadcast SEND to all neighbors with myData
-        byte toBroadcast = 0;
+        toBroadcast = 0;
         toBroadcast += propagationState;
         toBroadcast += BLOOM << 2;
         toBroadcast += myData << 4;

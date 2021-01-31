@@ -79,8 +79,13 @@ Once the game ends, you can long press any Blink to reset the game.
 
 ### End Game Rules
 #### Win condition
-A player instantly wins if they have a chain of at least 5 links.
-Each Blink can contribute at most 2 links to a chain.
+A player instantly wins if they have a chain of at least 5 links.  
+In the following picture, the red player has just won!  
+![red_win](https://github.com/aaronsantiago/trifoil/blob/master/images/red_win.png?raw=true)
+
+Each Blink can contribute at most 2 links to a chain.  
+In this picture, the blue player has *not* won, they only have a chain of 4 pieces.  
+![blue_notwin](https://github.com/aaronsantiago/trifoil/blob/master/images/blue_notwin.png?raw=true)
 
 #### End conditions
 Players only have 9 links each. If they run out, the game ends and whoever has the longest chain wins.

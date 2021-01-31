@@ -88,7 +88,7 @@ In this picture, the blue player has *not* won, they only have a chain of 4 piec
 ![blue_notwin](https://github.com/aaronsantiago/trifoil/blob/master/images/blue_notwin.png?raw=true)
 
 #### End conditions
-Players only have 9 links each. If they run out, the game ends and whoever has the longest chain wins.
+If no possible move can be made the game ends and whoever has the longest chain wins.
 
 ## Variations
 
@@ -96,7 +96,9 @@ The rulebook and the board are flexible, so use your imagination--the possibilit
 
 ### Rule Variations
 
- - Instead of a limited number of links, try playing until any one Blink has 5 links on it. When that happens, the longest chain wins.
+ - Try limiting number the total number of links you can place to 
+ . If either player runs out of links, the player with the longest chain wins.
+ - Try playing until any one Blink is filled with 6 links of any color. When that happens, the longest chain wins.
  - Try playing with 3 moves instead of 2! You might need to increase the winning chain length.
  - Removing the limit of links that a Blink can contribute to a chain creates a much more defensive game!
 

@@ -104,22 +104,22 @@ You can experiment with different rotatable shapes, different numbers of blinks,
 
 Winning Chain Length: 5  
 Available links per player: 11   
-![board_8](https://github.com/aaronsantiago/trifoil/blob/master/images/board_6.png?raw=true)
+![board_8](https://github.com/aaronsantiago/trifoil/blob/master/images/board_8.png?raw=true)
 
 #### 9 Blinks
 
 Winning Chain Length: 6  
 Available links per player: 12  
-![board_9](https://github.com/aaronsantiago/trifoil/blob/master/images/board_6.png?raw=true)
+![board_9](https://github.com/aaronsantiago/trifoil/blob/master/images/board_9.png?raw=true)
 
 #### 10 Blinks
 
 Winning Chain Length: 6   
 Available links per player: 13  
-![board_10](https://github.com/aaronsantiago/trifoil/blob/master/images/board_6.png?raw=true)
+![board_10](https://github.com/aaronsantiago/trifoil/blob/master/images/board_10.png?raw=true)
 
 #### 12 Blinks
 
 Winning Chain Length: 7  
 Available links per player: 15  
-![board_12](https://github.com/aaronsantiago/trifoil/blob/master/images/board_6.png?raw=true)
+![board_12](https://github.com/aaronsantiago/trifoil/blob/master/images/board_12.png?raw=true)

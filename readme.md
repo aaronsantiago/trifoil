@@ -2,14 +2,14 @@
 # Trifoil
 
 Trifoil is a long-form, head to head strategy game that can be played with 6 or more blinks.
-Players take turns placing pieces, pushing them, and sections of the board itself to try to build a long chain before their opponent can.
+Players take turns placing pieces, pushing them, and rotating sections of the board to try to build a long chain before their opponent can.
 
 The rules are flexible along with the initial board state, so the game can evolve to be simple, complex, or even just different depending on what you want to play!
 
 ## Setup
 
 You can play the game in the [Blinks simulator](https://move38.github.io/Blinks-Simulator/).
-Copy the code from `trifoil.ino` into the simulator!
+Copy the code from `trifoil.ino` into the simulator and press "Run Code" on the top right!
 
 You can also play "online multiplayer" using Google Slides, simply [duplicate this presentation](https://docs.google.com/presentation/d/1zNeIM4jhh3tsyYy73fLiq9a-cftgsKfThUjC3I1FVD8/edit?usp=sharing).
 

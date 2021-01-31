@@ -50,8 +50,9 @@ If they have the same amount of pieces as the opponent, they cannot spin it.
 #### Push
 
 You can push a piece outwards from a Blink the same way that you place a piece.
-If you attempt to place a piece where a piece already exists, you will instead push it--pushing any other pieces in the way as well!
-You can only push pieces of your own color.  
+If you attempt to place a piece where a piece already exists, you will instead push it.
+You can only start pushes from pieces of your own color.  
+If there are any pieces behind the piece you are pushing, it is pushed as well, regardless of its color!  
 ![push](https://github.com/aaronsantiago/trifoil/blob/master/images/push.gif?raw=true)  
 ![push_multiple](https://github.com/aaronsantiago/trifoil/blob/master/images/push_multiple.gif?raw=true)
 

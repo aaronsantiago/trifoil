@@ -2,7 +2,7 @@
 #### Trifoil
 
 Trifoil is a long-form, head to head strategy game that can be played with 6 or more blinks.
-Players take turns placing pieces, pushing them, and sections of the board itself to try to build a long chain before their opponent can.
+Players take turns placing pieces, pushing them, and rotating sections of the board to try to build a long chain before their opponent can.
 
 The rules are flexible along with the initial board state, so the game can evolve to be simple, complex, or even just different depending on what you want to play!
 

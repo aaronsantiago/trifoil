@@ -1,7 +1,7 @@
 
 # Trifoil
 
-Trifoil is a long-form, head to head strategy game that can be played with 6 or more blinks.
+Trifoil is a long-form, 2 player turn based strategy game in the vein of chess or go that can be played with 6 or more blinks.
 Players take turns placing links, pushing them, and rotating sections of the board to try to build a long chain before their opponent can.
 
 The rules are flexible along with the initial board state, so the game can evolve to be simple, complex, or even just different depending on what you want to play!
@@ -9,7 +9,7 @@ The rules are flexible along with the initial board state, so the game can evolv
 ## Setup
 
 You can play the game in the [Blinks simulator](https://move38.github.io/Blinks-Simulator/).
-Copy the code from `trifoil.ino` into the simulator and press "Run Code" on the top right!
+Copy the code from `trifoil.ino` into the simulator and press "Run Code" on the top right! (We suggest one player share their screen and the other dictate their moves).
 
 You can also play "online multiplayer" using Google Slides, simply [duplicate this presentation](https://docs.google.com/presentation/d/1zNeIM4jhh3tsyYy73fLiq9a-cftgsKfThUjC3I1FVD8/edit?usp=sharing).
 
@@ -19,7 +19,7 @@ The base board setup with 6 blinks is as follows:
 
 ![board_6](https://github.com/aaronsantiago/trifoil/blob/master/images/board_6.png?raw=true)
 
-There are 2 players, red and blue. The board is lit up with which player currently is making their move.
+There are 2 players, red and blue. The board's background color is lit up with the current player's color.
 Each turn, players can use up to 2 actions (see available actions), except for the first turn of the game where a player can only use one action.
 
 A player wins when they have a chain of 5 links of their own color!
@@ -39,7 +39,7 @@ This means that you can't place any links facing outwards from the formation.
 
 #### Spin 
 
-The board has 3 triangles that you can disconnect from the board and spin as one of your actions.
+You can disconnect, rotate, and reattach one of 3-blink triangles that form the corners of the board as one of your actions.
 They are labelled "Δ", "Ω", and "θ" in the board above!
 
 Players are allowed to do this ONLY if they have less links on that triangle than their opponents.
@@ -49,8 +49,8 @@ If they have the same amount of links as the opponent, they cannot spin it.
 
 #### Push
 
-You can push a link outwards from a Blink the same way that you place a link.
-If you attempt to place a link where a link already exists, you will instead push it--pushing any other links in the way as well!
+You can push a link outwards from a Blink the using the same input as placing a link.
+E.g. if you attempt to place a link where a link already exists, you will instead push it--pushing any other links in the way in a straight line as well!
 You can only push links of your own color.  
 ![push](https://github.com/aaronsantiago/trifoil/blob/master/images/push.gif?raw=true)  
 ![push_multiple](https://github.com/aaronsantiago/trifoil/blob/master/images/push_multiple.gif?raw=true)
@@ -109,22 +109,22 @@ You can experiment with different rotatable shapes, different numbers of blinks,
 
 Winning Chain Length: 5  
 Available links per player: 11   
-![board_8](https://github.com/aaronsantiago/trifoil/blob/master/images/board_8.png?raw=true)
+![board_8](https://github.com/aaronsantiago/trifoil/blob/master/images/board_6.png?raw=true)
 
 #### 9 Blinks
 
 Winning Chain Length: 6  
 Available links per player: 12  
-![board_9](https://github.com/aaronsantiago/trifoil/blob/master/images/board_9.png?raw=true)
+![board_9](https://github.com/aaronsantiago/trifoil/blob/master/images/board_6.png?raw=true)
 
 #### 10 Blinks
 
 Winning Chain Length: 6   
 Available links per player: 13  
-![board_10](https://github.com/aaronsantiago/trifoil/blob/master/images/board_10.png?raw=true)
+![board_10](https://github.com/aaronsantiago/trifoil/blob/master/images/board_6.png?raw=true)
 
 #### 12 Blinks
 
 Winning Chain Length: 7  
 Available links per player: 15  
-![board_12](https://github.com/aaronsantiago/trifoil/blob/master/images/board_12.png?raw=true)
+![board_12](https://github.com/aaronsantiago/trifoil/blob/master/images/board_6.png?raw=true)

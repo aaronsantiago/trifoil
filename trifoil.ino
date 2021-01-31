@@ -13,7 +13,8 @@
 // ************************************************************************************
 
 
-#define PENDING_CHANGE_PULSE_WIDTH 3000
+#define PENDING_CHANGE_PULSE_WIDTH 800
+#define CHAIN_PW 200
 
 enum propagationStates {
     INERT,
@@ -36,13 +37,15 @@ byte incomingNeighborData[6] = { 0, 0, 0, 0, 0, 0};
 
 enum bloomActions {
     UNDO,
-    TURN_CHANGE,
-    RESET
+    RESET,
+    TURN_CHANGE_RED,
+    TURN_CHANGE_BLUE
 };
 byte myData = 0;
 
 byte lastPushColorBitReceived = 0;
 bool wasPushSource = false;
+bool isSource = true; 
 
 Timer sharedTimer;
 const float sinkBroadcastSendTimeout = 0.5;
@@ -61,6 +64,13 @@ randomize();
 void resetToIdle() {
     propagationState = INERT;
     signalMode = SOURCE2SINK;
+}
+
+void broadcastOnAllFaces() {
+    byte broadcastVal = propagationState;
+    broadcastVal += signalMode << 2;
+    broadcastVal += myData << 4; 
+    setValueSentOnAllFaces(broadcastVal);
 }
 
 void loop() {
@@ -112,7 +122,10 @@ void loop() {
     // TODO: respond to double click for turn change
         signalMode = BLOOM;
         propagationState = SEND;
-        myData = TURN_CHANGE;
+        myData = TURN_CHANGE_RED;
+        if (!currentTurnColor) {
+            myData = TURN_CHANGE_BLUE;
+        }
     }
     if (buttonWasLongPressed) {
         // reset
@@ -138,16 +151,16 @@ void loop() {
             if (!buttonWasPressed) {
              
               FOREACH_FACE(f) {
-                setValueSentOnFace(0, f);
+                // send color using mydata to each neighbor so that we can animate chains
+                setValueSentOnFace(pips[f] << 4, f);
               }
             }
             else {
                 // We're source if none of our neighbors are broadcasting SEND
-                bool isSource = false;
-                byte faceGettingSend = 0;
+                isSource = true;
                 FOREACH_FACE(f) {
                     if (incomingPropagationStates[f] == SEND) {
-                        isSource = true;
+                        isSource = false;
                         break;
                     }
                 }
@@ -157,44 +170,49 @@ void loop() {
                 else {
                   propagationState = RESPOND;
                 } //probably don't add more code below this
-                
-                
-                // // As source, we need to check for which neighbor is broadcasting SEND and
-                // // try to input a move on that side. If a pip is already present on that
-                // // face then attempt a push.
-                // if (isSource) {
-                //     // Is the attempted action a push because that face has a pip already there?
-                //     if (pips[faceGettingSend] != 0) {
-                //         signalMode = PUSH;
-                //     } else {
-                //         // TODO Add making the move
-                //         if (currentTurnColor) {
-                //             pips[faceGettingSend] = 1;
-                //         } else {
-                //             pips[faceGettingSend] = 2;
-                //         }
-                        
-                //         resetToIdle();
-                //     }
-                    
-                //     // If the player doesn't make a move for a certain amount of time, then
-                //     // cancel it.
-                //     // TODO act on this timer
-                //     // sharedTimer.set(moveCancelTimeout);
-                // // As sink, we need to keep broadcasting SEND for 0.5 seconds and then change to INERT
-                // } else {
-                //     sharedTimer.set(sinkBroadcastSendTimeout);
-                //     while (true) {
-                //         if (sharedTimer.isExpired()) {
-                //             resetToIdle();
-                //           break;
-                //             // TODO broadcast state? Maybe handle at top of switch.
-                //         }
-                //     }
-                // }
             }
             break;
         case SEND:
+            // We're source if none of our neighbors are broadcasting SEND
+            // TODO This code is repeated.
+            isSource = true;
+            byte faceGettingSend = 0;
+            FOREACH_FACE(f) {
+                if (incomingPropagationStates[f] == SEND) {
+                    isSource = false;
+                    faceGettingSend = f;
+                    break;
+                }
+            }
+            // As source, we need to check for which neighbor is broadcasting RESPOND and
+            // try to input a move on that side. If a pip is already present on that
+            // face then attempt a push.
+            if (isSource) {
+                // Is the attempted action a push because that face has a pip already there?
+                if (pips[faceGettingSend] != 0) {
+                    signalMode = PUSH;
+                } else {
+                    if (currentTurnColor) {
+                        pips[faceGettingSend] = 1;
+                    } else {
+                        pips[faceGettingSend] = 2;
+                    }
+                    resetToIdle();
+                    broadcastOnAllFaces();
+                }
+                // If the player doesn't make a move for a certain amount of time, then
+                // cancel it.
+                // TODO act on this timer
+                // sharedTimer.set(moveCancelTimeout);
+            // As sink, we need to keep broadcasting SEND for 0.5 seconds and then change to INERT
+            } else {
+                sharedTimer.set(sinkBroadcastSendTimeout);
+                if (sharedTimer.isExpired()) {
+                    resetToIdle();
+                    // TODO broadcast state? Maybe handle at top of switch.
+                }
+            }
+        
             // TODO: check if any neighbors are RESPOND. if they are, then trigger a move.
                        // (write pip and go to INERT or, save push direction and go to PUSH SEND)
             //       if we are going to PUSH SEND make sure to write to myPushColorBit
@@ -243,11 +261,7 @@ void loop() {
             }
             break;
         case RESPOND:
-            toBroadcast = 0;
-            toBroadcast += RESPOND;
-            toBroadcast += PUSH << 2;
-            toBroadcast += myData << 4;
-            setValueSentOnAllFaces(toBroadcast);
+            broadcastOnAllFaces();
               // we're not SEND ing so it won't matter if we send to all
               // this lets us skip keeping track of which neighbors to RESPOND to
             
@@ -265,11 +279,7 @@ void loop() {
             }
             break;
         case RESOLVE:
-            toBroadcast = 0;
-            toBroadcast += RESOLVE;
-            toBroadcast += PUSH << 2;
-            toBroadcast += myData << 4;
-            setValueSentOnAllFaces(toBroadcast);
+            broadcastOnAllFaces();
               // we're not SEND ing so it won't matter if we send to all
               // this lets us skip keeping track of which neighbors to send RESOLVE to
             
@@ -293,13 +303,7 @@ void loop() {
         break;
     case BLOOM:
         // TODO: broadcast SEND to all neighbors with myData
-        toBroadcast = 0;
-        toBroadcast += propagationState;
-        toBroadcast += BLOOM << 2;
-        toBroadcast += myData << 4;
-        FOREACH_FACE(f) {
-          setValueSentOnFace(toBroadcast, f);
-        }
+        broadcastOnAllFaces();
         switch (propagationState) {
         case SEND:
             bool isAnyNeighborNotSendOrResolve = false;
@@ -319,11 +323,17 @@ void loop() {
                         pips[f] = lastPips[f];
                     }
                     break;
-                case TURN_CHANGE:
+                case TURN_CHANGE_RED:
                     FOREACH_FACE(f) {
                         lastPips[f] = pips[f];
                     }
-                    currentTurnColor = !currentTurnColor;
+                    currentTurnColor = false;
+                    break;
+                case TURN_CHANGE_BLUE:
+                    FOREACH_FACE(f) {
+                        lastPips[f] = pips[f];
+                    }
+                    currentTurnColor = true;
                     break;
                 case RESET:
                     FOREACH_FACE(f) { pips[f] = 0; };
@@ -356,17 +366,23 @@ void loop() {
     }
 
     bool arePipsChanged = false;
+    byte blueCount = 0;
+    byte redCount = 0;
     FOREACH_FACE(f) {
         if (pips[f] != lastPips[f]) {
             arePipsChanged = true;
-            break;
         }
+        if (pips[f] == 1) redCount++;
+        if (pips[f] == 2) blueCount++;
+        
     }
     FOREACH_FACE(f) {
+        byte brightness = 60;
         if (pips[f] == 0) {
-            byte brightness = 60;
             if (arePipsChanged) {
-                brightness = sin8_C(map(millis() % PENDING_CHANGE_PULSE_WIDTH, 0, PENDING_CHANGE_PULSE_WIDTH, 0, 255));
+                brightness = map(sin8_C(
+                        map(millis() % PENDING_CHANGE_PULSE_WIDTH, 0, PENDING_CHANGE_PULSE_WIDTH, 0, 255)
+                    ), 0, 255, 0, 100);
             }
             if (currentTurnColor) {
                 setColorOnFace(dim(RED, brightness), f);
@@ -375,11 +391,22 @@ void loop() {
                 setColorOnFace(dim(CYAN, brightness), f);
             }
         }
-        if (pips[f] == 1) {
-            setColorOnFace(RED, f);
-        }
-        if (pips[f] == 2) {
-            setColorOnFace(CYAN, f);
+        else {
+        
+            brightness = 255;
+            if ((pips[f] == incomingNeighborData[f] && !isValueReceivedOnFaceExpired(f))
+                  || (pips[f] == 1 && redCount >= 2)
+                  || (pips[f] == 2 && blueCount >= 2) ) {
+                brightness = map(sin8_C(
+                            map(millis() % CHAIN_PW, 0, CHAIN_PW, 0, 255)
+                        ), 0, 255, 200, 255);
+            }
+            if (pips[f] == 1) {
+                setColorOnFace(dim(RED, brightness), f);
+            }
+            if (pips[f] == 2) {
+                setColorOnFace(dim(CYAN, brightness), f);
+            }
         }
     }
 }

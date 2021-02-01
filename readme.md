@@ -28,7 +28,8 @@ The game also ends when either player has placed 9 links, in which case the play
 ### Available actions
 
 On the first turn of the game, the player going first only gets 1 action.
-Every turn afterwards each playe gets 2 actions.
+Every turn afterwards each player gets 2 actions.
+Note: You cannot make a move which returns the board to the previous board state.
 
 #### Place a link
 

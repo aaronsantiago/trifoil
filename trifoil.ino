@@ -62,7 +62,7 @@ void broadcastOnAllFaces() {
 void loop() {
 
     FOREACH_FACE(f) {
-        if (!isValueReceivedOnFaceExpired(f) && getLastValueReceivedOnFace(f) >= 0 ) {
+        if (!isValueReceivedOnFaceExpired(f)) {
             incomingPropagationStates[f] = getLastValueReceivedOnFace(f) & 3;
             incomingSignalModes[f] = (getLastValueReceivedOnFace(f) >> 2) & 3;
             incomingNeighborData[f] = (getLastValueReceivedOnFace(f) >> 4) & 3;
@@ -165,7 +165,7 @@ void loop() {
                 }
 
                 // Check which neighbor is broadcasting RESPOND
-                byte neighborBroadcastingRespond = -1;
+                int8_t neighborBroadcastingRespond = -1;
                 FOREACH_FACE(f) {
                     if (!isValueReceivedOnFaceExpired(f) && incomingPropagationStates[f] == SEND) {
                         neighborBroadcastingRespond = f;
@@ -237,7 +237,7 @@ void loop() {
         break;
     case PUSH:
         switch (propagationState) {
-        case SEND:
+        case SEND: {
             toBroadcast = 0;
             toBroadcast += SEND;
             toBroadcast += PUSH << 2;
@@ -266,7 +266,8 @@ void loop() {
               propagationState = RESPOND;
             }
             break;
-        case RESPOND:
+        }
+        case RESPOND: {
             broadcastOnAllFaces();
               // we're not SEND ing so it won't matter if we send to all
               // this lets us skip keeping track of which neighbors to RESPOND to
@@ -284,7 +285,8 @@ void loop() {
               propagationState = RESOLVE;
             }
             break;
-        case RESOLVE:
+        }
+        case RESOLVE: {
             broadcastOnAllFaces();
               // we're not SEND ing so it won't matter if we send to all
               // this lets us skip keeping track of which neighbors to send RESOLVE to
@@ -301,6 +303,7 @@ void loop() {
               resetToIdle();
             }
             break;
+        }
         default:
             // there must have been something wrong
             resetToIdle();
@@ -311,7 +314,7 @@ void loop() {
         // TODO: broadcast SEND to all neighbors with myData
         broadcastOnAllFaces();
         switch (propagationState) {
-        case SEND:
+        case SEND: {
             bool isAnyNeighborNotSendOrResolve = false;
             FOREACH_FACE(f) {
                 if (!isValueReceivedOnFaceExpired(f)
@@ -343,7 +346,8 @@ void loop() {
             }
             // TODO: check if all neighbors are SEND. if so, switch to resolve and do the action stored in myData
             break;
-        case RESOLVE:
+        }
+        case RESOLVE: {
             bool isAnyNeighborNotResolveOrInert = false;
             FOREACH_FACE(f) {
                 if (!isValueReceivedOnFaceExpired(f)
@@ -357,6 +361,7 @@ void loop() {
                 resetToIdle();
             }
             break;
+        }
         default:
             // there must have been something wrong
             resetToIdle();

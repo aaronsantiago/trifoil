@@ -1,31 +1,25 @@
+
+// *****************************************************************
+// If trying to play on real Blinks--make sure to comment out 
+// the marked line (line 62 at time of writing)
+// *****************************************************************
+
+
 #define PENDING_CHANGE_PULSE_WIDTH 800
 #define CHAIN_PW 200
 #define SPINNER_PW 700
 
-enum propagationStates {
-    INERT,
-    SEND,
-    RESPOND,
-    RESOLVE
-};
+enum propagationStates { INERT, SEND, RESPOND, RESOLVE };
 byte propagationState = INERT;
 // order of signal types is important, higher has a higher override
-enum signalModes {
-    SOURCE2SINK,
-    PUSH,
-    BLOOM
-};
+enum signalModes { SOURCE2SINK, PUSH, BLOOM };
 byte signalMode = SOURCE2SINK;
 
 byte incomingPropagationStates[6] = { INERT, INERT, INERT, INERT, INERT, INERT };
 byte incomingSignalModes[6] = { SOURCE2SINK, SOURCE2SINK, SOURCE2SINK, SOURCE2SINK, SOURCE2SINK, SOURCE2SINK };
 byte incomingNeighborData[6] = { 0, 0, 0, 0, 0, 0};
 
-enum bloomActions {
-    UNDO,
-    TURN_CHANGE,
-    RESET
-};
+enum bloomActions { UNDO, TURN_CHANGE, RESET };
 byte myData = 0;
 
 byte lastPushColorBitReceived = 0;
@@ -63,6 +57,11 @@ void loop() {
 
     FOREACH_FACE(f) {
         if (!isValueReceivedOnFaceExpired(f)) {
+// ***********************************************************************
+//  The following line should be UNCOMMENTED in the simulator and
+//  COMMENTED on Blinks hardware.
+            if (getLastValueReceivedOnFace(f) < 0) continue;
+// ***********************************************************************
             incomingPropagationStates[f] = getLastValueReceivedOnFace(f) & 3;
             incomingSignalModes[f] = (getLastValueReceivedOnFace(f) >> 2) & 3;
             incomingNeighborData[f] = (getLastValueReceivedOnFace(f) >> 4) & 3;
@@ -165,14 +164,14 @@ void loop() {
                 }
 
                 // Check which neighbor is broadcasting RESPOND
-                int8_t neighborBroadcastingRespond = -1;
+                byte neighborBroadcastingRespond = 6; // no response
                 FOREACH_FACE(f) {
                     if (!isValueReceivedOnFaceExpired(f) && incomingPropagationStates[f] == SEND) {
                         neighborBroadcastingRespond = f;
                         break;
                     }
                 }
-                if (neighborBroadcastingRespond == -1) {
+                if (neighborBroadcastingRespond == 6) {
                     break;
                 }
                 // Is the attempted action a push because that face has a pip already there?

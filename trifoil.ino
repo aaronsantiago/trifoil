@@ -381,7 +381,7 @@ void loop() {
         
     }
     FOREACH_FACE(f) {
-        byte brightness = 100;
+        byte brightness = 40;
         if (pips[f] == 0) {
             if (arePipsChanged) {
                 brightness = map(sin8_C(

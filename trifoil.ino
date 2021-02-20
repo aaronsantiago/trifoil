@@ -9,6 +9,13 @@
 #define CHAIN_PW 200
 #define SPINNER_PW 700
 
+#define CHAIN_DARK_FRAMES 3
+#define CHAIN_DARK_COOLDOWN_FRAMES 10
+#define CHAIN_SEND_FRAMES 3
+
+#define CHAIN_START_CHANCE 1000
+
+
 enum propagationStates { INERT, SEND, RESPOND, RESOLVE };
 byte propagationState = INERT;
 // order of signal types is important, higher has a higher override
@@ -18,6 +25,9 @@ byte signalMode = SOURCE2SINK;
 byte incomingPropagationStates[6] = { INERT, INERT, INERT, INERT, INERT, INERT };
 byte incomingSignalModes[6] = { SOURCE2SINK, SOURCE2SINK, SOURCE2SINK, SOURCE2SINK, SOURCE2SINK, SOURCE2SINK };
 byte incomingNeighborData[6] = { 0, 0, 0, 0, 0, 0};
+byte chainTimer[6] = { 0, 0, 0, 0, 0, 0};
+bool chainSending[6] = { false, false, false, false, false, false }; 
+bool chainStartedFromExternal[6] = { false, false, false, false, false, false }; 
 
 enum bloomActions { UNDO, TURN_CHANGE, RESET };
 byte myData = 0;
@@ -33,7 +43,7 @@ bool haveSetTimer = false;
 
 byte pushDirection = 0;
 
-byte pips[] = { 0, 0, 0, 0, 0, 0 };
+byte pips[] = { 0,0,0,0,0,0 };
 byte lastPips[] = {0, 0, 0, 0, 0, 0}; // for undo
 bool currentTurnColor = false; // turn color true -> pip[f] = 2
 
@@ -64,6 +74,7 @@ void loop() {
 // ***********************************************************************
             incomingPropagationStates[f] = getLastValueReceivedOnFace(f) & 3;
             incomingSignalModes[f] = (getLastValueReceivedOnFace(f) >> 2) & 3;
+            
             incomingNeighborData[f] = (getLastValueReceivedOnFace(f) >> 4) & 3;
 
             // check if neighbor has a signal type that should override ours, and is trying to SEND to us
@@ -129,7 +140,12 @@ void loop() {
              
               FOREACH_FACE(f) {
                 // send color using mydata to each neighbor so that we can animate chains
-                setValueSentOnFace(pips[f] << 4, f);
+                if (!chainSending[f]) {
+                  setValueSentOnFace(pips[f] << 4, f);
+                }
+                else {
+                  setValueSentOnFace(3 << 4, f);
+                }
               }
             }
             else {
@@ -381,7 +397,7 @@ void loop() {
         
     }
     FOREACH_FACE(f) {
-        byte brightness = 100;
+        byte brightness = 40;
         if (pips[f] == 0) {
             if (arePipsChanged) {
                 brightness = map(sin8_C(
@@ -398,12 +414,66 @@ void loop() {
         else {
         
             brightness = 255;
-            if (pips[f] == incomingNeighborData[f]
-                  || (pips[f] == 1 && redCount >= 2)
-                  || (pips[f] == 2 && blueCount >= 2) ) {
-                brightness = map(sin8_C(
-                            map(millis() % CHAIN_PW, 0, CHAIN_PW, 0, 255)
-                        ), 0, 255, 200, 255);
+            if (incomingNeighborData[f] == 3 && !isValueReceivedOnFaceExpired(f)) {
+              if (chainTimer[f] == 0) {
+                chainStartedFromExternal[f] = true;
+                chainTimer[f] = 1;
+              }
+            }
+            byte currentCount = redCount;
+            if (pips[f] == 2) currentCount = blueCount;
+            if (pips[f] > 0 && random(CHAIN_START_CHANCE) < 10 && chainTimer[f] == 0
+                && (currentCount == 1 || (incomingNeighborData[f] != pips[f] && !isValueReceivedOnFaceExpired(f)))) {
+              chainTimer[f] = 1;
+            }
+            if (chainTimer[f] > 0) {
+              chainTimer[f] += 1;
+              if (chainTimer[f] > CHAIN_DARK_FRAMES + CHAIN_SEND_FRAMES) {
+                chainSending[f] = false;
+              }
+              if (chainTimer[f] > CHAIN_DARK_COOLDOWN_FRAMES) {
+                chainTimer[f] = 0;
+                chainStartedFromExternal[f] = false;
+              }
+              else if (chainTimer[f] < CHAIN_DARK_FRAMES && chainTimer[f] != 0) {
+                brightness = 0;
+              }
+              else if (chainTimer[f] == CHAIN_DARK_FRAMES) {
+                int chance = currentCount - 2; //inclusive random, exclude self
+                
+                if (pips[f] == incomingNeighborData[f] && !isValueReceivedOnFaceExpired(f) && !chainStartedFromExternal[f]) {
+                  chance += 1;
+                }
+                
+                byte pick = random(chance);
+                if (chance < 0) break;
+                byte i = 0;
+                FOREACH_FACE(g) {
+                  if (f == g) continue;
+                  
+                  if (pips[g] == pips[f]) {
+                    if (i++ == pick) {
+                      if (chainTimer[g] == 0) {
+                        chainTimer[g] = 1;
+                        FOREACH_FACE(h) {
+                          if (h == g || h == f) continue;
+                          if (chainTimer[h] == 0 && pips[h] == pips[f]) {
+                            chainTimer[h] = CHAIN_DARK_FRAMES + 1;
+                          }
+                        }
+                        i = 9;
+                        break;
+                      }
+                      else {
+                        i--;
+                      }
+                    }
+                  }
+                }
+                if (i < 9) {
+                  chainSending[f] = true;
+                }
+              }
             }
             if (pips[f] == 1) {
                 setColorOnFace(dim(RED, brightness), f);

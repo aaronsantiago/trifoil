@@ -12,6 +12,18 @@
 
 #define CHAIN_START_CHANCE 1000
 
+// used for color blending
+#define RED_R 255
+#define RED_G 50
+#define RED_B 70
+
+#define BLUE_R 50
+#define BLUE_G 120
+#define BLUE_B 255
+
+#define RED_COLOR makeColorRGB(RED_R, RED_G, RED_B)
+#define BLUE_COLOR makeColorRGB(BLUE_R, BLUE_G, BLUE_B)
+
 
 enum propagationStates { INERT, SEND, RESPOND, RESOLVE };
 byte propagationState = INERT;
@@ -25,6 +37,8 @@ byte incomingNeighborData[6] = { 0, 0, 0, 0, 0, 0};
 byte chainTimer[6] = { 0, 0, 0, 0, 0, 0};
 bool chainSending[6] = { false, false, false, false, false, false };
 bool chainStartedFromExternal[6] = { false, false, false, false, false, false };
+
+byte animBuffer[6] = { 0, 0, 0, 0, 0, 0 };
 
 enum bloomActions { UNDO, TURN_CHANGE, RESET };
 byte myData = 0;
@@ -42,7 +56,7 @@ byte pushDirection = 0;
 
 byte pips[] = { 0, 0, 0, 0, 0, 0 };
 byte lastPips[] = {0, 0, 0, 0, 0, 0}; // for undo
-bool currentTurnColor = false; // turn color true -> pip[f] = 2
+bool currentTurnColor = true; // turn color true -> pip[f] = 2
 
 void setup() {
     randomize();
@@ -340,6 +354,7 @@ void loop() {
                 case RESET:
                     FOREACH_FACE(f) {
                         pips[f] = 0;
+                        lastPips[f] = 0;
                     };
                 default:
                     break;
@@ -382,7 +397,11 @@ void loop() {
         if (pips[f] == 2) blueCount++;
 
     }
+    byte current_R[6] = {0, 0, 0, 0, 0, 0};
+    byte current_G[6] = {0, 0, 0, 0, 0, 0};
+    byte current_B[6] = {0, 0, 0, 0, 0, 0};
     FOREACH_FACE(f) {
+
         byte brightness = 40;
         if (pips[f] == 0) {
             // Animation saying "this blink has been changed"
@@ -390,11 +409,6 @@ void loop() {
                 brightness = map(sin8_C(
                                      map(millis() % PENDING_CHANGE_PULSE_WIDTH, 0, PENDING_CHANGE_PULSE_WIDTH, 0, 255)
                                  ), 0, 255, 0, 100);
-            }
-            if (!currentTurnColor) {
-                setColorOnFace(dim(RED, brightness), f);
-            } else {
-                setColorOnFace(dim(CYAN, brightness), f);
             }
         } else {
             // If the pip is active, animate
@@ -412,7 +426,7 @@ void loop() {
             byte currentCount = redCount;
             if (pips[f] == 2) currentCount = blueCount;
             if (pips[f] > 0 && random(CHAIN_START_CHANCE) < 10 && chainTimer[f] == 0
-                    && (currentCount == 1 || (incomingNeighborData[f] != pips[f] && !isValueReceivedOnFaceExpired(f)))) {
+                    && ((currentCount == 1) != (incomingNeighborData[f] != pips[f] && !isValueReceivedOnFaceExpired(f)))) {
                 chainTimer[f] = 1;
             }
 
@@ -481,16 +495,40 @@ void loop() {
                     }
                 }
             }
+        }
 
-            if (pips[f] == 1) {
-                setColorOnFace(dim(RED, brightness), f);
-            }
-            if (pips[f] == 2) {
-                setColorOnFace(dim(CYAN, brightness), f);
-            }
+        if (pips[f] == 1 || pips[f] == 0 && !currentTurnColor) {
+            current_R[f] = RED_R * (float)(brightness/255);
+            current_G[f] = RED_G * (float)(brightness/255);
+            current_B[f] = RED_B * (float)(brightness/255);
+        }
+        if (pips[f] == 2 || pips[f] == 0 && currentTurnColor) {
+            current_R[f] = BLUE_R * (float)(brightness/255);
+            current_G[f] = BLUE_G * (float)(brightness/255);
+            current_B[f] = BLUE_B * (float)(brightness/255);
         }
     }
     if (propagationState == SEND && signalMode == SOURCE2SINK && isSource) {
-        setColorOnFace(WHITE, map(millis() % SPINNER_PW, 0, SPINNER_PW, 0, 6));
+        byte index = (int)(map(millis() % SPINNER_PW, 0, SPINNER_PW, 0, 6));
+        animBuffer[index] = 255;
+    }
+    FOREACH_FACE(f) {
+        current_R[f] = max(current_R[f], animBuffer[f]);
+        current_G[f] = max(current_G[f], animBuffer[f]);
+        current_B[f] = max(current_B[f], animBuffer[f]);
+        animBuffer[f] = (int)(animBuffer[f] * .75);
+    }
+    if (propagationState == RESOLVE && signalMode == BLOOM && myData == TURN_CHANGE) {
+        FOREACH_FACE(f) {
+            if (currentTurnColor) {
+                animBuffer[f] = 125;
+            }
+            else {
+                animBuffer[f] = 125;
+            }
+        }
+    }
+    FOREACH_FACE(f) {
+        setColorOnFace(makeColorRGB(current_R[f], current_G[f], current_B[f]), f);
     }
 }

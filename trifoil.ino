@@ -7,6 +7,9 @@
 #define CHAIN_DARK_COOLDOWN_FRAMES 10
 #define CHAIN_SEND_FRAMES 3
 
+// this must be less than the cooldown frames to work intuitively
+#define CHAIN_UNDARK_FRAMES 5
+
 #define CHAIN_START_CHANCE 1000
 
 
@@ -20,15 +23,15 @@ byte incomingPropagationStates[6] = { INERT, INERT, INERT, INERT, INERT, INERT }
 byte incomingSignalModes[6] = { SOURCE2SINK, SOURCE2SINK, SOURCE2SINK, SOURCE2SINK, SOURCE2SINK, SOURCE2SINK };
 byte incomingNeighborData[6] = { 0, 0, 0, 0, 0, 0};
 byte chainTimer[6] = { 0, 0, 0, 0, 0, 0};
-bool chainSending[6] = { false, false, false, false, false, false }; 
-bool chainStartedFromExternal[6] = { false, false, false, false, false, false }; 
+bool chainSending[6] = { false, false, false, false, false, false };
+bool chainStartedFromExternal[6] = { false, false, false, false, false, false };
 
 enum bloomActions { UNDO, TURN_CHANGE, RESET };
 byte myData = 0;
 
 byte lastPushColorBitReceived = 0;
 bool wasPushSource = false;
-bool isSource = true; 
+bool isSource = true;
 
 Timer sharedTimer;
 const int sinkBroadcastSendTimeout = 500;
@@ -37,12 +40,12 @@ bool haveSetTimer = false;
 
 byte pushDirection = 0;
 
-byte pips[] = { 0,0,0,0,0,0 };
+byte pips[] = { 0, 0, 0, 0, 0, 0 };
 byte lastPips[] = {0, 0, 0, 0, 0, 0}; // for undo
 bool currentTurnColor = false; // turn color true -> pip[f] = 2
 
 void setup() {
-randomize();
+    randomize();
 }
 
 void resetToIdle() {
@@ -53,7 +56,7 @@ void resetToIdle() {
 void broadcastOnAllFaces() {
     byte broadcastVal = propagationState;
     broadcastVal += signalMode << 2;
-    broadcastVal += myData << 4; 
+    broadcastVal += myData << 4;
     setValueSentOnAllFaces(broadcastVal);
 }
 
@@ -63,7 +66,7 @@ void loop() {
         if (!isValueReceivedOnFaceExpired(f)) {
             incomingPropagationStates[f] = getLastValueReceivedOnFace(f) & 3;
             incomingSignalModes[f] = (getLastValueReceivedOnFace(f) >> 2) & 3;
-            
+
             incomingNeighborData[f] = (getLastValueReceivedOnFace(f) >> 4) & 3;
 
             // check if neighbor has a signal type that should override ours, and is trying to SEND to us
@@ -76,23 +79,20 @@ void loop() {
                     pushDirection = (f + 3) % 6;
 
                     if (pips[f] == 0) { // regular push
-                      pips[f] = lastPushColorBitReceived + 1;
-                      myData = 2 + (myData & 1); // set the success bit
-                      propagationState = RESPOND;
-                    }
-                    else if (pips[pushDirection] == 0) { // 1 pip displaced
-                      pips[pushDirection] = pips[f];
-                      pips[f] = lastPushColorBitReceived + 1;
-                      myData = 2 + (myData & 1); // set the success bit to 1
-                      propagationState = RESPOND;
-                    }
-                    else if (!isValueReceivedOnFaceExpired(pushDirection)) { // both pips and neighbor exists
-                      myData = (pips[pushDirection] - 1); // set the color bit
-                      propagationState = SEND;
-                    }
-                    else { // both pips and neighbor does not exist
-                      myData = 0 + (myData & 1); // set the success bit to 0
-                      propagationState = RESPOND;
+                        pips[f] = lastPushColorBitReceived + 1;
+                        myData = 2 + (myData & 1); // set the success bit
+                        propagationState = RESPOND;
+                    } else if (pips[pushDirection] == 0) { // 1 pip displaced
+                        pips[pushDirection] = pips[f];
+                        pips[f] = lastPushColorBitReceived + 1;
+                        myData = 2 + (myData & 1); // set the success bit to 1
+                        propagationState = RESPOND;
+                    } else if (!isValueReceivedOnFaceExpired(pushDirection)) { // both pips and neighbor exists
+                        myData = (pips[pushDirection] - 1); // set the color bit
+                        propagationState = SEND;
+                    } else { // both pips and neighbor does not exist
+                        myData = 0 + (myData & 1); // set the success bit to 0
+                        propagationState = RESPOND;
                     }
                 }
             }
@@ -104,7 +104,7 @@ void loop() {
     bool buttonWasDoubleClicked = buttonDoubleClicked();
     bool buttonWasPressed = buttonSingleClicked();
     if (buttonWasDoubleClicked) {
-    // TODO: respond to double click for turn change
+        // TODO: respond to double click for turn change
         signalMode = BLOOM;
         propagationState = SEND;
         myData = TURN_CHANGE;
@@ -126,18 +126,16 @@ void loop() {
         switch (propagationState) {
         case INERT:
             if (!buttonWasPressed) {
-             
-              FOREACH_FACE(f) {
-                // send color using mydata to each neighbor so that we can animate chains
-                if (!chainSending[f]) {
-                  setValueSentOnFace(pips[f] << 4, f);
+
+                FOREACH_FACE(f) {
+                    // send color using mydata to each neighbor so that we can animate chains
+                    if (!chainSending[f]) {
+                        setValueSentOnFace(pips[f] << 4, f);
+                    } else {
+                        setValueSentOnFace(3 << 4, f);
+                    }
                 }
-                else {
-                  setValueSentOnFace(3 << 4, f);
-                }
-              }
-            }
-            else {
+            } else {
                 // We're source if none of our neighbors are broadcasting SEND
                 isSource = true;
                 FOREACH_FACE(f) {
@@ -147,10 +145,9 @@ void loop() {
                     }
                 }
                 if (isSource) {
-                  propagationState = SEND;
-                }
-                else {
-                  propagationState = SEND;
+                    propagationState = SEND;
+                } else {
+                    propagationState = SEND;
                 } //probably don't add more code below this
                 broadcastOnAllFaces();
             }
@@ -183,18 +180,17 @@ void loop() {
                 if (pips[neighborBroadcastingRespond] != 0) {
                     // Are we trying to push a color that doesn't belong to us? If so go back to idle
                     if ((currentTurnColor && pips[neighborBroadcastingRespond] == 1) ||
-                       (!currentTurnColor && pips[neighborBroadcastingRespond] == 2)) {
+                            (!currentTurnColor && pips[neighborBroadcastingRespond] == 2)) {
                         resetToIdle();
                         broadcastOnAllFaces();
-                    }
-                    else {
+                    } else {
                         pushDirection = neighborBroadcastingRespond;
                         wasPushSource = true;
                         signalMode = PUSH;
                         propagationState = SEND;
                         myData = (pips[pushDirection] - 1); // set the color bit
                     }
-                  
+
                 } else {
                     if (currentTurnColor) {
                         pips[neighborBroadcastingRespond] = 2;
@@ -208,7 +204,7 @@ void loop() {
                 // cancel it.
                 // TODO act on this timer
                 // sharedTimer.set(moveCancelTimeout);
-            // As sink, we need to keep broadcasting SEND for 0.5 seconds and then change to INERT
+                // As sink, we need to keep broadcasting SEND for 0.5 seconds and then change to INERT
             } else {
                 if (!haveSetTimer) {
                     sharedTimer.set(sinkBroadcastSendTimeout);
@@ -222,9 +218,9 @@ void loop() {
                     broadcastOnAllFaces();
                 }
             }
-        
+
             // TODO: check if any neighbors are RESPOND. if they are, then trigger a move.
-                       // (write pip and go to INERT or, save push direction and go to PUSH SEND)
+            // (write pip and go to INERT or, save push direction and go to PUSH SEND)
             //       if we are going to PUSH SEND make sure to write to myPushColorBit
             // TODO: check if timeout is finished, if so go to INERT
             // TODO: broadcast send to all neighbors
@@ -248,63 +244,62 @@ void loop() {
             toBroadcast += myData << 4;
             setValueSentOnAllFaces(0);
             setValueSentOnFace(toBroadcast, pushDirection);
-            
+
             bool isPushNeighborRespond = false;
             if (!isValueReceivedOnFaceExpired(pushDirection)
-                && incomingPropagationStates[pushDirection] == RESPOND
-                && incomingSignalModes[pushDirection] == PUSH) {
-              isPushNeighborRespond = true;
+                    && incomingPropagationStates[pushDirection] == RESPOND
+                    && incomingSignalModes[pushDirection] == PUSH) {
+                isPushNeighborRespond = true;
             }
             if (isPushNeighborRespond) {
-              // set our success bit to match the incoming one
-              myData = (incomingNeighborData[pushDirection] & 2) + (myData & 1);
-              if (myData >> 1 > 0) {
-                if (wasPushSource) {
-                  pips[pushDirection] = 0;
+                // set our success bit to match the incoming one
+                myData = (incomingNeighborData[pushDirection] & 2) + (myData & 1);
+                if (myData >> 1 > 0) {
+                    if (wasPushSource) {
+                        pips[pushDirection] = 0;
+                    } else { // we're only in PUSH SEND and not source if both push pips are filled
+                        pips[pushDirection] = pips[(pushDirection + 3) % 6];
+                        pips[(pushDirection + 3) % 6] = lastPushColorBitReceived + 1;
+                    }
                 }
-                else { // we're only in PUSH SEND and not source if both push pips are filled
-                  pips[pushDirection] = pips[(pushDirection + 3) % 6];
-                  pips[(pushDirection + 3) % 6] = lastPushColorBitReceived + 1;
-                }
-              }
-              propagationState = RESPOND;
+                propagationState = RESPOND;
             }
             break;
         }
         case RESPOND: {
             broadcastOnAllFaces();
-              // we're not SEND ing so it won't matter if we send to all
-              // this lets us skip keeping track of which neighbors to RESPOND to
-            
+            // we're not SEND ing so it won't matter if we send to all
+            // this lets us skip keeping track of which neighbors to RESPOND to
+
             bool areAllPUSHNeighborsRespondOrResolve = true;
             FOREACH_FACE(f) {
-              if (!isValueReceivedOnFaceExpired(f)
-                  && (!(incomingPropagationStates[f] == RESPOND || incomingPropagationStates[f] == RESOLVE)
-                  && incomingSignalModes[f] == PUSH)) {
-                areAllPUSHNeighborsRespondOrResolve = false;
-                break;
-              }
+                if (!isValueReceivedOnFaceExpired(f)
+                        && (!(incomingPropagationStates[f] == RESPOND || incomingPropagationStates[f] == RESOLVE)
+                            && incomingSignalModes[f] == PUSH)) {
+                    areAllPUSHNeighborsRespondOrResolve = false;
+                    break;
+                }
             }
             if (areAllPUSHNeighborsRespondOrResolve) {
-              propagationState = RESOLVE;
+                propagationState = RESOLVE;
             }
             break;
         }
         case RESOLVE: {
             broadcastOnAllFaces();
-              // we're not SEND ing so it won't matter if we send to all
-              // this lets us skip keeping track of which neighbors to send RESOLVE to
-            
+            // we're not SEND ing so it won't matter if we send to all
+            // this lets us skip keeping track of which neighbors to send RESOLVE to
+
             bool areAllNeighborsResolveOrInert = true;
             FOREACH_FACE(f) {
-              if (!isValueReceivedOnFaceExpired(f)
-                  && !(incomingPropagationStates[f] == INERT || incomingPropagationStates[f] == RESOLVE)) {
-                areAllNeighborsResolveOrInert = false;
-                break;
-              }
+                if (!isValueReceivedOnFaceExpired(f)
+                        && !(incomingPropagationStates[f] == INERT || incomingPropagationStates[f] == RESOLVE)) {
+                    areAllNeighborsResolveOrInert = false;
+                    break;
+                }
             }
             if (areAllNeighborsResolveOrInert) {
-              resetToIdle();
+                resetToIdle();
             }
             break;
         }
@@ -322,8 +317,8 @@ void loop() {
             bool isAnyNeighborNotSendOrResolve = false;
             FOREACH_FACE(f) {
                 if (!isValueReceivedOnFaceExpired(f)
-                    && (incomingPropagationStates[f] < SEND // if it's SEND or RESOLVE we're OK
-                        || incomingSignalModes[f] != BLOOM)) {
+                        && (incomingPropagationStates[f] < SEND // if it's SEND or RESOLVE we're OK
+                            || incomingSignalModes[f] != BLOOM)) {
                     isAnyNeighborNotSendOrResolve = true;
                     break;
                 }
@@ -343,7 +338,9 @@ void loop() {
                     currentTurnColor = !currentTurnColor;
                     break;
                 case RESET:
-                    FOREACH_FACE(f) { pips[f] = 0; };
+                    FOREACH_FACE(f) {
+                        pips[f] = 0;
+                    };
                 default:
                     break;
                 }
@@ -355,8 +352,8 @@ void loop() {
             bool isAnyNeighborNotResolveOrInert = false;
             FOREACH_FACE(f) {
                 if (!isValueReceivedOnFaceExpired(f)
-                    // if neighbors are inert or resolve we are OK
-                    && (!(incomingPropagationStates[f] == INERT || incomingPropagationStates[f] == RESOLVE))) {
+                        // if neighbors are inert or resolve we are OK
+                        && (!(incomingPropagationStates[f] == INERT || incomingPropagationStates[f] == RESOLVE))) {
                     isAnyNeighborNotResolveOrInert = true;
                     break;
                 }
@@ -383,87 +380,108 @@ void loop() {
         }
         if (pips[f] == 1) redCount++;
         if (pips[f] == 2) blueCount++;
-        
+
     }
     FOREACH_FACE(f) {
         byte brightness = 40;
         if (pips[f] == 0) {
+            // Animation saying "this blink has been changed"
             if (arePipsChanged) {
                 brightness = map(sin8_C(
-                        map(millis() % PENDING_CHANGE_PULSE_WIDTH, 0, PENDING_CHANGE_PULSE_WIDTH, 0, 255)
-                    ), 0, 255, 0, 100);
+                                     map(millis() % PENDING_CHANGE_PULSE_WIDTH, 0, PENDING_CHANGE_PULSE_WIDTH, 0, 255)
+                                 ), 0, 255, 0, 100);
             }
             if (!currentTurnColor) {
                 setColorOnFace(dim(RED, brightness), f);
-            }
-            else {
+            } else {
                 setColorOnFace(dim(CYAN, brightness), f);
             }
-        }
-        else {
-        
+        } else {
+            // If the pip is active, animate
             brightness = 255;
+
+            // Check if the neighbor pip is telling us that a chain pulse is happening
             if (incomingNeighborData[f] == 3 && !isValueReceivedOnFaceExpired(f)) {
-              if (chainTimer[f] == 0) {
-                chainStartedFromExternal[f] = true;
-                chainTimer[f] = 1;
-              }
+                if (chainTimer[f] == 0) {
+                    chainStartedFromExternal[f] = true;
+                    chainTimer[f] = 1;
+                }
             }
+
+            // Get the count of "adjacent" pips of the same color including the neighbor
             byte currentCount = redCount;
             if (pips[f] == 2) currentCount = blueCount;
             if (pips[f] > 0 && random(CHAIN_START_CHANCE) < 10 && chainTimer[f] == 0
-                && (currentCount == 1 || (incomingNeighborData[f] != pips[f] && !isValueReceivedOnFaceExpired(f)))) {
-              chainTimer[f] = 1;
+                    && (currentCount == 1 || (incomingNeighborData[f] != pips[f] && !isValueReceivedOnFaceExpired(f)))) {
+                chainTimer[f] = 1;
             }
+
+            // Chain pulse is active
             if (chainTimer[f] > 0) {
-              chainTimer[f] += 1;
-              if (chainTimer[f] > CHAIN_DARK_FRAMES + CHAIN_SEND_FRAMES) {
-                chainSending[f] = false;
-              }
-              if (chainTimer[f] > CHAIN_DARK_COOLDOWN_FRAMES) {
-                chainTimer[f] = 0;
-                chainStartedFromExternal[f] = false;
-              }
-              else if (chainTimer[f] < CHAIN_DARK_FRAMES && chainTimer[f] != 0) {
-                brightness = 0;
-              }
-              else if (chainTimer[f] == CHAIN_DARK_FRAMES) {
-                int chance = currentCount - 2; //inclusive random, exclude self
-                
-                if (pips[f] == incomingNeighborData[f] && !isValueReceivedOnFaceExpired(f) && !chainStartedFromExternal[f]) {
-                  chance += 1;
+                chainTimer[f] += 1;
+
+                // Ensure we stop sending to our neighbor if we're past the specified number of send frames
+                if (chainTimer[f] > CHAIN_DARK_FRAMES + CHAIN_SEND_FRAMES) {
+                    chainSending[f] = false;
                 }
-                
-                byte pick = random(chance);
-                if (chance < 0) break;
-                byte i = 0;
-                FOREACH_FACE(g) {
-                  if (f == g) continue;
-                  
-                  if (pips[g] == pips[f]) {
-                    if (i++ == pick) {
-                      if (chainTimer[g] == 0) {
-                        chainTimer[g] = 1;
-                        FOREACH_FACE(h) {
-                          if (h == g || h == f) continue;
-                          if (chainTimer[h] == 0 && pips[h] == pips[f]) {
-                            chainTimer[h] = CHAIN_DARK_FRAMES + 1;
-                          }
-                        }
-                        i = 9;
-                        break;
-                      }
-                      else {
-                        i--;
-                      }
+                // If we're done with the entire chain pulse, reset
+                if (chainTimer[f] > CHAIN_DARK_COOLDOWN_FRAMES + CHAIN_DARK_FRAMES) {
+                    chainTimer[f] = 0;
+                    chainStartedFromExternal[f] = false;
+                }
+                // Smoothly animate the brightness up
+                if (chainTimer[f] >= CHAIN_DARK_FRAMES) {
+                    brightness = map(chainTimer[f] - CHAIN_DARK_FRAMES, 0, CHAIN_UNDARK_FRAMES, 0, 255);
+                }
+                // Smoothly animate the brightness down
+                if (chainTimer[f] < CHAIN_DARK_FRAMES && chainTimer[f] != 0) {
+                    brightness = 255 - map(chainTimer[f], 0, CHAIN_DARK_FRAMES, 0, 255);
+                }
+                // Once we reach exactly CHAIN_DARK_FRAMES, pass the chain to a neighbor or adjacent link
+                if (chainTimer[f] == CHAIN_DARK_FRAMES) {
+                    int chance = currentCount - 2; //inclusive random, exclude self
+
+                    // Add neighbor if they are the same color
+                    if (pips[f] == incomingNeighborData[f] && !isValueReceivedOnFaceExpired(f) && !chainStartedFromExternal[f]) {
+                        chance += 1;
                     }
-                  }
+                    byte pick = random(chance);
+                    // If there are no neighbors or adjacent links to use
+                    if (chance < 0) break;
+
+                    // Find all valid adjacent links
+                    byte i = 0;
+                    FOREACH_FACE(g) {
+                        if (f == g) continue;
+
+                        if (pips[g] == pips[f]) {
+                            // Is this the one we randomly chose?
+                            if (i++ >= pick) {
+                                // Is this one not already chain pulsing?
+                                // If it's already chain pulsing, we'll choose the next one instead
+                                if (chainTimer[g] == 0) {
+                                    chainTimer[g] = 1;
+                                    // Now that we chose a link to pass the pulse to, put all the other adjacent
+                                    // links on cooldown
+                                    FOREACH_FACE(h) {
+                                        if (h == g || h == f) continue;
+                                        if (chainTimer[h] == 0 && pips[h] == pips[f]) {
+                                            chainTimer[h] = CHAIN_DARK_FRAMES + 1;
+                                        }
+                                    }
+                                    i = 255;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    // if we didn't choose any adjacent links, send to our neighbor
+                    if (i < 255) {
+                        chainSending[f] = true;
+                    }
                 }
-                if (i < 9) {
-                  chainSending[f] = true;
-                }
-              }
             }
+
             if (pips[f] == 1) {
                 setColorOnFace(dim(RED, brightness), f);
             }

@@ -1,10 +1,4 @@
 
-// *****************************************************************
-// If trying to play on real Blinks--make sure to comment out 
-// the marked line (line 62 at time of writing)
-// *****************************************************************
-
-
 #define PENDING_CHANGE_PULSE_WIDTH 800
 #define CHAIN_PW 200
 #define SPINNER_PW 700
@@ -67,11 +61,6 @@ void loop() {
 
     FOREACH_FACE(f) {
         if (!isValueReceivedOnFaceExpired(f)) {
-// ***********************************************************************
-//  The following line should be UNCOMMENTED in the simulator and
-//  COMMENTED on Blinks hardware.
-            if (getLastValueReceivedOnFace(f) < 0) continue;
-// ***********************************************************************
             incomingPropagationStates[f] = getLastValueReceivedOnFace(f) & 3;
             incomingSignalModes[f] = (getLastValueReceivedOnFace(f) >> 2) & 3;
             

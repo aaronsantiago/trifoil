@@ -4,13 +4,13 @@
 #define SPINNER_PW 700
 
 #define CHAIN_DARK_FRAMES 3
-#define CHAIN_DARK_COOLDOWN_FRAMES 10
+#define CHAIN_DARK_COOLDOWN_FRAMES 15
 #define CHAIN_SEND_FRAMES 3
 
 // this must be less than the cooldown frames to work intuitively
-#define CHAIN_UNDARK_FRAMES 5
+#define CHAIN_UNDARK_FRAMES 13
 
-#define CHAIN_START_CHANCE 1000
+#define CHAIN_START_CHANCE 3000
 
 // used for color blending
 #define RED_R 255
@@ -408,7 +408,7 @@ void loop() {
             if (arePipsChanged) {
                 brightness = map(sin8_C(
                                      map(millis() % PENDING_CHANGE_PULSE_WIDTH, 0, PENDING_CHANGE_PULSE_WIDTH, 0, 255)
-                                 ), 0, 255, 0, 100);
+                                 ), 0, 255, 0, 60);
             }
         } else {
             // If the pip is active, animate
@@ -445,12 +445,14 @@ void loop() {
                 }
                 // Smoothly animate the brightness up
                 if (chainTimer[f] >= CHAIN_DARK_FRAMES) {
-                    brightness = map(chainTimer[f] - CHAIN_DARK_FRAMES, 0, CHAIN_UNDARK_FRAMES, 0, 255);
+                    brightness = map(chainTimer[f] - CHAIN_DARK_FRAMES, 0, CHAIN_UNDARK_FRAMES, 100, 255);
                 }
                 // Smoothly animate the brightness down
                 if (chainTimer[f] < CHAIN_DARK_FRAMES && chainTimer[f] != 0) {
-                    brightness = 255 - map(chainTimer[f], 0, CHAIN_DARK_FRAMES, 0, 255);
+                    brightness = 255 - map(chainTimer[f], 0, CHAIN_DARK_FRAMES, 0, 100);
                 }
+              
+                bool neighborSendAvailable = false;
                 // Once we reach exactly CHAIN_DARK_FRAMES, pass the chain to a neighbor or adjacent link
                 if (chainTimer[f] == CHAIN_DARK_FRAMES) {
                     int chance = currentCount - 2; //inclusive random, exclude self
@@ -458,6 +460,7 @@ void loop() {
                     // Add neighbor if they are the same color
                     if (pips[f] == incomingNeighborData[f] && !isValueReceivedOnFaceExpired(f) && !chainStartedFromExternal[f]) {
                         chance += 1;
+                        neighborSendAvailable = true;
                     }
                     byte pick = random(chance);
                     // If there are no neighbors or adjacent links to use
@@ -480,7 +483,7 @@ void loop() {
                                     FOREACH_FACE(h) {
                                         if (h == g || h == f) continue;
                                         if (chainTimer[h] == 0 && pips[h] == pips[f]) {
-                                            chainTimer[h] = CHAIN_DARK_FRAMES + 1;
+                                            chainTimer[h] = CHAIN_DARK_FRAMES + CHAIN_UNDARK_FRAMES + 1;
                                         }
                                     }
                                     i = 255;
@@ -490,7 +493,7 @@ void loop() {
                         }
                     }
                     // if we didn't choose any adjacent links, send to our neighbor
-                    if (i < 255) {
+                    if (i < 255 && neighborSendAvailable) {
                         chainSending[f] = true;
                     }
                 }
@@ -516,7 +519,7 @@ void loop() {
         current_R[f] = max(current_R[f], animBuffer[f]);
         current_G[f] = max(current_G[f], animBuffer[f]);
         current_B[f] = max(current_B[f], animBuffer[f]);
-        animBuffer[f] = (int)(animBuffer[f] * .75);
+        animBuffer[f] = (int)(animBuffer[f] * .9);
     }
     if (propagationState == RESOLVE && signalMode == BLOOM && myData == TURN_CHANGE) {
         FOREACH_FACE(f) {

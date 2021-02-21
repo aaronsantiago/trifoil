@@ -3,14 +3,14 @@
 #define CHAIN_PW 200
 #define SPINNER_PW 700
 
-#define CHAIN_DARK_FRAMES 3
-#define CHAIN_DARK_COOLDOWN_FRAMES 15
+#define CHAIN_DARK_FRAMES 10
+#define CHAIN_DARK_COOLDOWN_FRAMES 30
 #define CHAIN_SEND_FRAMES 3
 
 // this must be less than the cooldown frames to work intuitively
-#define CHAIN_UNDARK_FRAMES 13
+#define CHAIN_UNDARK_FRAMES 20
 
-#define CHAIN_START_CHANCE 3000
+#define CHAIN_START_CHANCE 2000
 
 // used for color blending
 #define RED_R 255
@@ -402,7 +402,7 @@ void loop() {
     byte current_B[6] = {0, 0, 0, 0, 0, 0};
     FOREACH_FACE(f) {
 
-        byte brightness = 40;
+        float brightness = 40;
         if (pips[f] == 0) {
             // Animation saying "this blink has been changed"
             if (arePipsChanged) {
@@ -444,14 +444,14 @@ void loop() {
                     chainStartedFromExternal[f] = false;
                 }
                 // Smoothly animate the brightness up
-                if (chainTimer[f] >= CHAIN_DARK_FRAMES) {
+                if (chainTimer[f] > CHAIN_DARK_FRAMES) {
                     brightness = map(chainTimer[f] - CHAIN_DARK_FRAMES, 0, CHAIN_UNDARK_FRAMES, 100, 255);
                 }
                 // Smoothly animate the brightness down
-                if (chainTimer[f] < CHAIN_DARK_FRAMES && chainTimer[f] != 0) {
-                    brightness = 255 - map(chainTimer[f], 0, CHAIN_DARK_FRAMES, 0, 100);
+                if (chainTimer[f] <= CHAIN_DARK_FRAMES && chainTimer[f] != 0) {
+                    brightness = 255 - map(chainTimer[f], 0, CHAIN_DARK_FRAMES, 0, 155);
                 }
-              
+
                 bool neighborSendAvailable = false;
                 // Once we reach exactly CHAIN_DARK_FRAMES, pass the chain to a neighbor or adjacent link
                 if (chainTimer[f] == CHAIN_DARK_FRAMES) {
@@ -464,51 +464,52 @@ void loop() {
                     }
                     byte pick = random(chance);
                     // If there are no neighbors or adjacent links to use
-                    if (chance < 0) break;
+                    if (chance >= 0) {
 
-                    // Find all valid adjacent links
-                    byte i = 0;
-                    FOREACH_FACE(g) {
-                        if (f == g) continue;
+                        // Find all valid adjacent links
+                        byte i = 0;
+                        FOREACH_FACE(g) {
+                            if (f == g) continue;
 
-                        if (pips[g] == pips[f]) {
-                            // Is this the one we randomly chose?
-                            if (i++ >= pick) {
-                                // Is this one not already chain pulsing?
-                                // If it's already chain pulsing, we'll choose the next one instead
-                                if (chainTimer[g] == 0) {
-                                    chainTimer[g] = 1;
-                                    // Now that we chose a link to pass the pulse to, put all the other adjacent
-                                    // links on cooldown
-                                    FOREACH_FACE(h) {
-                                        if (h == g || h == f) continue;
-                                        if (chainTimer[h] == 0 && pips[h] == pips[f]) {
-                                            chainTimer[h] = CHAIN_DARK_FRAMES + CHAIN_UNDARK_FRAMES + 1;
+                            if (pips[g] == pips[f]) {
+                                // Is this the one we randomly chose?
+                                if (i++ >= pick) {
+                                    // Is this one not already chain pulsing?
+                                    // If it's already chain pulsing, we'll choose the next one instead
+                                    if (chainTimer[g] == 0) {
+                                        chainTimer[g] = 1;
+                                        // Now that we chose a link to pass the pulse to, put all the other adjacent
+                                        // links on cooldown
+                                        FOREACH_FACE(h) {
+                                            if (h == g || h == f) continue;
+                                            if (chainTimer[h] == 0 && pips[h] == pips[f]) {
+                                                chainTimer[h] = CHAIN_DARK_FRAMES + CHAIN_UNDARK_FRAMES + 1;
+                                            }
                                         }
+                                        i = 255;
+                                        break;
                                     }
-                                    i = 255;
-                                    break;
                                 }
                             }
                         }
-                    }
-                    // if we didn't choose any adjacent links, send to our neighbor
-                    if (i < 255 && neighborSendAvailable) {
-                        chainSending[f] = true;
+                        // if we didn't choose any adjacent links, send to our neighbor
+                        if (i < 255 && neighborSendAvailable) {
+                            chainSending[f] = true;
+                        }
                     }
                 }
             }
         }
 
         if (pips[f] == 1 || pips[f] == 0 && !currentTurnColor) {
-            current_R[f] = RED_R * (float)(brightness/255);
-            current_G[f] = RED_G * (float)(brightness/255);
-            current_B[f] = RED_B * (float)(brightness/255);
+            current_R[f] = RED_R * (float)(brightness / 255);
+            current_G[f] = RED_G * (float)(brightness / 255);
+            current_B[f] = RED_B * (float)(brightness / 255);
         }
         if (pips[f] == 2 || pips[f] == 0 && currentTurnColor) {
-            current_R[f] = BLUE_R * (float)(brightness/255);
-            current_G[f] = BLUE_G * (float)(brightness/255);
-            current_B[f] = BLUE_B * (float)(brightness/255);
+            current_R[f] = BLUE_R * (float)(brightness / 255);
+            current_G[f] = BLUE_G * (float)(brightness / 255);
+            current_B[f] = BLUE_B * (float)(brightness / 255);
         }
     }
     if (propagationState == SEND && signalMode == SOURCE2SINK && isSource) {
@@ -525,8 +526,7 @@ void loop() {
         FOREACH_FACE(f) {
             if (currentTurnColor) {
                 animBuffer[f] = 125;
-            }
-            else {
+            } else {
                 animBuffer[f] = 125;
             }
         }

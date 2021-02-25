@@ -7,6 +7,8 @@
 #define CHAIN_DARK_COOLDOWN_FRAMES 30
 #define CHAIN_SEND_FRAMES 3
 
+#define TURN_COLOR_BRIGHTNESS 53
+
 // this must be less than the cooldown frames to work intuitively
 #define CHAIN_UNDARK_FRAMES 20
 
@@ -407,7 +409,7 @@ void loop() {
     byte current_B[6] = {0, 0, 0, 0, 0, 0};
     FOREACH_FACE(f) {
 
-        int brightness = 40;
+        int brightness = TURN_COLOR_BRIGHTNESS;
         if (pips[f] == 0) {
             // Animation saying "this blink has been changed"
             if (arePipsChanged) {

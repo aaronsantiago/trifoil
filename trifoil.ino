@@ -74,6 +74,10 @@ void broadcastOnAllFaces() {
     setValueSentOnAllFaces(broadcastVal);
 }
 
+int calcRGB(int c, int b) {
+    return c * ((float)b / 255);
+}
+
 void loop() {
 
     FOREACH_FACE(f) {
@@ -402,7 +406,7 @@ void loop() {
     byte current_B[6] = {0, 0, 0, 0, 0, 0};
     FOREACH_FACE(f) {
 
-        float brightness = 40;
+        int brightness = 40;
         if (pips[f] == 0) {
             // Animation saying "this blink has been changed"
             if (arePipsChanged) {
@@ -502,14 +506,14 @@ void loop() {
         }
 
         if (pips[f] == 1 || pips[f] == 0 && !currentTurnColor) {
-            current_R[f] = RED_R * (float)(brightness / 255);
-            current_G[f] = RED_G * (float)(brightness / 255);
-            current_B[f] = RED_B * (float)(brightness / 255);
+            current_R[f] = calcRGB(RED_R, brightness);
+            current_G[f] = calcRGB(RED_G, brightness);
+            current_B[f] = calcRGB(RED_B, brightness);
         }
         if (pips[f] == 2 || pips[f] == 0 && currentTurnColor) {
-            current_R[f] = BLUE_R * (float)(brightness / 255);
-            current_G[f] = BLUE_G * (float)(brightness / 255);
-            current_B[f] = BLUE_B * (float)(brightness / 255);
+            current_R[f] = calcRGB(BLUE_R, brightness);
+            current_G[f] = calcRGB(BLUE_G, brightness);
+            current_B[f] = calcRGB(BLUE_B, brightness);
         }
     }
     if (propagationState == SEND && signalMode == SOURCE2SINK && isSource) {

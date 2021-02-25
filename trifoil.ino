@@ -65,6 +65,7 @@ void setup() {
 void resetToIdle() {
     propagationState = INERT;
     signalMode = SOURCE2SINK;
+    wasPushSource = false;
 }
 
 void broadcastOnAllFaces() {
@@ -75,7 +76,7 @@ void broadcastOnAllFaces() {
 }
 
 int calcRGB(int c, int b) {
-    return c * ((float)b / 255);
+    return c * b / 255;
 }
 
 void loop() {

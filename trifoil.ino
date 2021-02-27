@@ -26,7 +26,6 @@
 #define RED_COLOR makeColorRGB(RED_R, RED_G, RED_B)
 #define BLUE_COLOR makeColorRGB(BLUE_R, BLUE_G, BLUE_B)
 
-
 enum propagationStates { INERT, SEND, RESPOND, RESOLVE };
 byte propagationState = INERT;
 // order of signal types is important, higher has a higher override
@@ -60,6 +59,8 @@ byte pips[] = { 0, 0, 0, 0, 0, 0 };
 byte lastPips[] = {0, 0, 0, 0, 0, 0}; // for undo
 bool currentTurnColor = true; // turn color true -> pip[f] = 2
 
+bool justWoke = hasWoken();
+
 void setup() {
     randomize();
 }
@@ -67,7 +68,9 @@ void setup() {
 void resetToIdle() {
     propagationState = INERT;
     signalMode = SOURCE2SINK;
+    isSource = false;
     wasPushSource = false;
+    haveSetTimer = false;
 }
 
 void broadcastOnAllFaces() {
@@ -156,7 +159,9 @@ void loop() {
                         setValueSentOnFace(3 << 4, f);
                     }
                 }
-            } else {
+            // This justWoke check prevents us from displaying the spinner when
+            // a user single clicks a blink to wake a group of blinks from sleep.
+            } else if (!justWoke) {
                 // We're source if none of our neighbors are broadcasting SEND
                 isSource = true;
                 FOREACH_FACE(f) {
@@ -363,6 +368,7 @@ void loop() {
                         pips[f] = 0;
                         lastPips[f] = 0;
                     };
+                    currentTurnColor = true;
                 default:
                     break;
                 }
@@ -541,4 +547,6 @@ void loop() {
     FOREACH_FACE(f) {
         setColorOnFace(makeColorRGB(current_R[f], current_G[f], current_B[f]), f);
     }
+
+    justWoke = hasWoken();
 }

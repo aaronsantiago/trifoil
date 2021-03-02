@@ -7,7 +7,7 @@
 #define CHAIN_DARK_COOLDOWN_FRAMES 30
 #define CHAIN_SEND_FRAMES 3
 
-#define TURN_COLOR_BRIGHTNESS 53
+#define TURN_COLOR_BRIGHTNESS 73
 
 // this must be less than the cooldown frames to work intuitively
 #define CHAIN_UNDARK_FRAMES 20
@@ -17,7 +17,7 @@
 // used for color blending
 #define RED_R 255
 #define RED_G 50
-#define RED_B 70
+#define RED_B 40
 
 #define BLUE_R 50
 #define BLUE_G 120

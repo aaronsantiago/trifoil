@@ -16,12 +16,12 @@
 
 // used for color blending
 #define RED_R 255
-#define RED_G 50
-#define RED_B 40
+#define RED_G 30
+#define RED_B 0
 
-#define BLUE_R 50
-#define BLUE_G 120
-#define BLUE_B 255
+#define BLUE_R 20
+#define BLUE_G 40
+#define BLUE_B 225
 
 #define RED_COLOR makeColorRGB(RED_R, RED_G, RED_B)
 #define BLUE_COLOR makeColorRGB(BLUE_R, BLUE_G, BLUE_B)

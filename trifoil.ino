@@ -535,13 +535,11 @@ void loop() {
         current_B[f] = max(current_B[f], animBuffer[f]);
         animBuffer[f] = (int)(animBuffer[f] * .9);
     }
-    if (propagationState == RESOLVE && signalMode == BLOOM && myData == TURN_CHANGE) {
+    if (propagationState == RESOLVE && signalMode == BLOOM) {
         FOREACH_FACE(f) {
-            if (currentTurnColor) {
-                animBuffer[f] = 125;
-            } else {
-                animBuffer[f] = 125;
-            }
+            if(myData == TURN_CHANGE) animBuffer[f] = 125;
+            if(myData == RESET) animBuffer[f] = 255;
+            if(myData == UNDO) animBuffer[f] = 55;
         }
     }
     FOREACH_FACE(f) {

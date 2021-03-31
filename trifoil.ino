@@ -526,14 +526,14 @@ void loop() {
         }
     }
     if (propagationState == SEND && signalMode == SOURCE2SINK && isSource) {
-        byte index = (int)(map(millis() % SPINNER_PW, 0, SPINNER_PW, 0, 6));
+        byte index = (byte)(map(millis() % SPINNER_PW, 0, SPINNER_PW, 0, 5));
         animBuffer[index] = 255;
     }
     FOREACH_FACE(f) {
         current_R[f] = max(current_R[f], animBuffer[f]);
         current_G[f] = max(current_G[f], animBuffer[f]);
         current_B[f] = max(current_B[f], animBuffer[f]);
-        animBuffer[f] = (int)(animBuffer[f] * .9);
+        animBuffer[f] = (byte)(animBuffer[f] * .9);
     }
     if (propagationState == RESOLVE && signalMode == BLOOM) {
         FOREACH_FACE(f) {

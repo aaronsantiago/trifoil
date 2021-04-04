@@ -1,5 +1,3 @@
-
-#define PENDING_CHANGE_PULSE_WIDTH 800
 #define CHAIN_PW 200
 #define SPINNER_PW 700
 
@@ -417,11 +415,9 @@ void loop() {
 
         int brightness = TURN_COLOR_BRIGHTNESS;
         if (pips[f] == 0) {
-            // Animation saying "this blink has been changed"
+            // Dim background if "this blink has been changed"
             if (arePipsChanged) {
-                brightness = map(sin8_C(
-                                     map(millis() % PENDING_CHANGE_PULSE_WIDTH, 0, PENDING_CHANGE_PULSE_WIDTH, 0, 255)
-                                 ), 0, 255, 0, 60);
+                brightness = 50;
             }
         } else {
             // If the pip is active, animate
@@ -538,7 +534,11 @@ void loop() {
     if (propagationState == RESOLVE && signalMode == BLOOM) {
         FOREACH_FACE(f) {
             if(myData == TURN_CHANGE) animBuffer[f] = 125;
-            if(myData == RESET) animBuffer[f] = 255;
+            if(myData == RESET) {
+                console.log('here');
+                setColor(WHITE);
+                animBuffer[f] = 255;
+            }
             if(myData == UNDO) animBuffer[f] = 55;
         }
     }

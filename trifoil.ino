@@ -39,7 +39,7 @@ bool chainStartedFromExternal[6] = { false, false, false, false, false, false };
 
 byte animBuffer[6] = { 0, 0, 0, 0, 0, 0 };
 
-enum bloomActions { UNDO, TURN_CHANGE, RESET };
+enum bloomActions { UNDO, TURN_CHANGE_RED, TURN_CHANGE_BLUE, RESET };
 byte myData = 0;
 
 byte lastPushColorBitReceived = 0;
@@ -129,7 +129,7 @@ void loop() {
         // TODO: respond to double click for turn change
         signalMode = BLOOM;
         propagationState = SEND;
-        myData = TURN_CHANGE;
+        myData = currentTurnColor ? TURN_CHANGE_RED : TURN_CHANGE_BLUE;
     }
     if (buttonWasLongPressed) {
         // reset
@@ -355,11 +355,17 @@ void loop() {
                         pips[f] = lastPips[f];
                     }
                     break;
-                case TURN_CHANGE:
+                case TURN_CHANGE_RED:
                     FOREACH_FACE(f) {
                         lastPips[f] = pips[f];
                     }
-                    currentTurnColor = !currentTurnColor;
+                    currentTurnColor = false;
+                    break;
+                case TURN_CHANGE_BLUE:
+                    FOREACH_FACE(f) {
+                        lastPips[f] = pips[f];
+                    }
+                    currentTurnColor = true;
                     break;
                 case RESET:
                     FOREACH_FACE(f) {
@@ -533,9 +539,9 @@ void loop() {
     }
     if (propagationState == RESOLVE && signalMode == BLOOM) {
         FOREACH_FACE(f) {
-            if(myData == TURN_CHANGE) animBuffer[f] = 125;
+            if(myData == TURN_CHANGE_RED) animBuffer[f] = 125;
+            if(myData == TURN_CHANGE_BLUE) animBuffer[f] = 125;
             if(myData == RESET) {
-                console.log('here');
                 setColor(WHITE);
                 animBuffer[f] = 255;
             }

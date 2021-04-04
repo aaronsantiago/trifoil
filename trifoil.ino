@@ -5,12 +5,12 @@
 #define CHAIN_DARK_COOLDOWN_FRAMES 30
 #define CHAIN_SEND_FRAMES 3
 
-#define TURN_COLOR_BRIGHTNESS 73
-
 // this must be less than the cooldown frames to work intuitively
 #define CHAIN_UNDARK_FRAMES 20
 
-#define CHAIN_START_CHANCE 2000
+#define CHAIN_START_CHANCE 1000
+
+#define TURN_COLOR_BRIGHTNESS 40
 
 // used for color blending
 #define RED_R 255
@@ -19,7 +19,7 @@
 
 #define BLUE_R 20
 #define BLUE_G 40
-#define BLUE_B 225
+#define BLUE_B 255
 
 #define RED_COLOR makeColorRGB(RED_R, RED_G, RED_B)
 #define BLUE_COLOR makeColorRGB(BLUE_R, BLUE_G, BLUE_B)
@@ -420,12 +420,7 @@ void loop() {
     FOREACH_FACE(f) {
 
         int brightness = TURN_COLOR_BRIGHTNESS;
-        if (pips[f] == 0) {
-            // Dim background if "this blink has been changed"
-            if (arePipsChanged) {
-                brightness = 50;
-            }
-        } else {
+        if (pips[f] == 1) {
             // If the pip is active, animate
             brightness = 255;
 
@@ -440,7 +435,7 @@ void loop() {
             // Get the count of "adjacent" pips of the same color including the neighbor
             byte currentCount = redCount;
             if (pips[f] == 2) currentCount = blueCount;
-            if (pips[f] > 0 && random(CHAIN_START_CHANCE) < 10 && chainTimer[f] == 0
+            if (pips[f] > 0 && random(CHAIN_START_CHANCE) == 0 && chainTimer[f] == 0
                     && ((currentCount == 1) != (incomingNeighborData[f] != pips[f] && !isValueReceivedOnFaceExpired(f)))) {
                 chainTimer[f] = 1;
             }

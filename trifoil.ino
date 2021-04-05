@@ -10,7 +10,8 @@
 
 #define CHAIN_START_CHANCE 1000
 
-#define TURN_COLOR_BRIGHTNESS 40
+#define BLUE_TURN_COLOR_BRIGHTNESS 40
+#define RED_TURN_COLOR_BRIGHTNESS 80
 
 // used for color blending
 #define RED_R 255
@@ -418,8 +419,7 @@ void loop() {
     byte current_G[6] = {0, 0, 0, 0, 0, 0};
     byte current_B[6] = {0, 0, 0, 0, 0, 0};
     FOREACH_FACE(f) {
-
-        int brightness = TURN_COLOR_BRIGHTNESS;
+        int brightness = currentTurnColor ? BLUE_TURN_COLOR_BRIGHTNESS : RED_TURN_COLOR_BRIGHTNESS;
         if (pips[f] != 0) {
             // If the pip is active, animate
             brightness = 255;

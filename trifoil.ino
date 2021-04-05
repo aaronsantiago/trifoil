@@ -10,7 +10,7 @@
 
 #define CHAIN_START_CHANCE 1000
 
-#define BLUE_TURN_COLOR_BRIGHTNESS 40
+#define BLUE_TURN_COLOR_BRIGHTNESS 20
 #define RED_TURN_COLOR_BRIGHTNESS 80
 
 // used for color blending
@@ -18,8 +18,8 @@
 #define RED_G 30
 #define RED_B 0
 
-#define BLUE_R 20
-#define BLUE_G 40
+#define BLUE_R 0
+#define BLUE_G 30
 #define BLUE_B 255
 
 #define RED_COLOR makeColorRGB(RED_R, RED_G, RED_B)

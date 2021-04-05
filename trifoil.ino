@@ -420,7 +420,7 @@ void loop() {
     FOREACH_FACE(f) {
 
         int brightness = TURN_COLOR_BRIGHTNESS;
-        if (pips[f] == 1) {
+        if (pips[f] != 0) {
             // If the pip is active, animate
             brightness = 255;
 

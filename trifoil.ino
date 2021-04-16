@@ -11,7 +11,7 @@
 #define CHAIN_START_CHANCE 1000
 
 #define BLUE_TURN_COLOR_BRIGHTNESS 20
-#define RED_TURN_COLOR_BRIGHTNESS 80
+#define RED_TURN_COLOR_BRIGHTNESS 70
 
 // used for color blending
 #define RED_R 255
